@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learning Curves · Day 3</title>
+<meta name="description" content="Day 3 Lab, exercise 3: match three learning-curve graphs to underfitting, a good fit and overfitting.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('ai256p-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      var s = localStorage.getItem('ai256p-scale');
+      if (s) document.documentElement.style.setProperty('--scale', s);
+    } catch (e) {}
+  })();
+</script>
+<style>
+
+  :root {
+    --scale: 1;
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    --radius: 14px;
+    --maxw: 1080px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1220; --bg-grid: rgba(148,163,196,0.06);
+    --surface: #151c2e; --surface-2: #1b2439; --line: #2a3550; --line-strong: #3a4766;
+    --text: #e8edf6; --muted: #9ba7bf; --faint: #6f7c96;
+    --accent: #f5a524; --accent-ink: #1a1203; --accent-soft: rgba(245,165,36,0.14);
+    --blue: #6ea8ff; --blue-soft: rgba(110,168,255,0.13);
+    --good: #3ecf8e; --good-soft: rgba(62,207,142,0.14);
+    --bad: #ff6b7d; --bad-soft: rgba(255,107,125,0.12);
+    --warn: #f5c451;
+    --train: #ff5f6d; --val: #5aa2ff;
+    --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.25);
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --bg-grid: rgba(15,23,42,0.05);
+    --surface: #f6f7fa; --surface-2: #eef1f6; --line: #d5dbe6; --line-strong: #aeb8c9;
+    --text: #0b1220; --muted: #3f4a5e; --faint: #5f6b80;
+    --accent: #b45f00; --accent-ink: #ffffff; --accent-soft: rgba(180,95,0,0.10);
+    --blue: #1d4ed8; --blue-soft: rgba(29,78,216,0.09);
+    --good: #047857; --good-soft: rgba(4,120,87,0.10);
+    --bad: #be123c; --bad-soft: rgba(190,18,60,0.08);
+    --warn: #92400e;
+    --train: #d4283a; --val: #1f5fd6;
+    --shadow: 0 1px 2px rgba(15,23,42,0.06);
+  }
+  * { box-sizing: border-box; }
+  html { font-size: calc(17px * var(--scale)); -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background-color: var(--bg);
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--text); font-family: var(--font); line-height: 1.6;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  a { color: var(--blue); }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+  .topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .topbar .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+  .crumb { font-family: var(--mono); font-size: .78rem; color: var(--muted); letter-spacing: .02em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crumb b { color: var(--text); font-weight: 600; }
+  .tools { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn { font: 600 .82rem var(--font); color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; height: 36px; min-width: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+  .icon-btn:hover { border-color: var(--line-strong); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .theme-label { display: none; }
+  @media (min-width: 640px) { .theme-label { display: inline; } }
+
+  .exnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 22px 0 0; font-size: .84rem; }
+  .exnav .lbl { font-family: var(--mono); color: var(--faint); font-size: .74rem; letter-spacing: .04em; margin-right: 4px; }
+  .exnav a { text-decoration: none; color: var(--muted); border: 1px solid var(--line); background: var(--surface); padding: 3px 11px; border-radius: 999px; }
+  .exnav a:hover { border-color: var(--line-strong); color: var(--text); }
+  .exnav a[aria-current="page"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+  header.hero { padding: 26px 0 4px; }
+  .kicker { font-family: var(--mono); color: var(--accent); font-size: .85rem; letter-spacing: .04em; margin: 0 0 6px; }
+  h1 { font-size: clamp(1.8rem, 4.2vw, 2.7rem); line-height: 1.15; margin: 0 0 14px; letter-spacing: -0.015em; }
+  .lede { font-size: 1.08rem; color: var(--muted); max-width: 68ch; margin: 0; }
+  .lede strong { color: var(--text); }
+  section { margin: 34px 0; scroll-margin-top: 72px; }
+  h2 { font-size: 1.3rem; margin: 0 0 14px; letter-spacing: -0.005em; display: flex; align-items: baseline; gap: 10px; }
+  h2 .num { font-family: var(--mono); font-size: .85rem; color: var(--accent); font-weight: 500; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+
+  .collab { display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: var(--blue-soft); border: 1px dashed var(--blue); border-radius: var(--radius); margin-top: 18px; max-width: 68ch; }
+  .collab svg { flex-shrink: 0; width: 24px; height: 24px; color: var(--blue); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn { font: 600 .98rem var(--font); border-radius: 11px; padding: 11px 18px; cursor: pointer; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); }
+  .btn:hover:not(:disabled) { border-color: var(--text); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.06); border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn[hidden] { display: none; }
+  .feedback { margin-top: 14px; padding: 12px 16px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface-2); display: none; }
+  .feedback.show { display: block; }
+  .feedback.good { background: var(--good-soft); border-color: var(--good); }
+  .feedback.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .feedback b { font-size: 1.05rem; }
+
+  .reveal { display: none; }
+  .reveal.show { display: block; animation: rise .35s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .takeaways { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+  .takeaways .card { padding: 16px 18px; }
+  .takeaways h4 { margin: 0 0 6px; font-size: 1rem; }
+  .takeaways p { margin: 0; color: var(--muted); font-size: .93rem; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 50px; padding: 20px 0 40px; color: var(--faint); font-size: .85rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+  footer .next { font-weight: 600; text-decoration: none; }
+  .linkbtn { background: none; border: none; color: var(--faint); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .9rem; opacity: 0; pointer-events: none; transition: all .2s; z-index: 20; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+
+  .chart { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart .axis { stroke: var(--text); stroke-width: 2; fill: none; }
+  .chart .arrow { fill: var(--text); }
+  .chart .ax-lbl { fill: var(--muted); font: 500 13px var(--font); }
+  .chart .train { stroke: var(--train); stroke-width: 4; fill: none; stroke-linecap: round; }
+  .chart .val { stroke: var(--val); stroke-width: 4; fill: none; stroke-linecap: round; }
+  .chart .lbl-train { fill: var(--train); font: 600 14px var(--font); }
+  .chart .lbl-val { fill: var(--val); font: 600 14px var(--font); }
+  .chart .anno { opacity: 0; transition: opacity .4s; }
+  .chart.annotate .anno { opacity: 1; }
+  .chart .anno line { stroke: var(--good); stroke-width: 1.8; stroke-dasharray: 4 4; }
+  .chart .anno circle { fill: var(--good); }
+  .chart .anno text { fill: var(--good); font: 600 12px var(--font); }
+  .chart.mini .train, .chart.mini .val { stroke-width: 6; }
+  .chart.mini .axis { stroke-width: 4; }
+
+  .figure { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+  .fig { padding: 14px 16px 10px; }
+  .fig h3 { margin: 0 0 6px; font: 600 1rem var(--mono); }
+  .legend-row { display: flex; gap: 18px; font-size: .86rem; color: var(--muted); margin-top: 10px; flex-wrap: wrap; }
+  .legend-row span::before { content: ""; display: inline-block; width: 18px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 7px; }
+  .legend-row .lt::before { background: var(--train); }
+  .legend-row .lv::before { background: var(--val); }
+
+  .hint { color: var(--faint); font-size: .9rem; margin: 0 0 14px; }
+  .mboard { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) clamp(56px, 16vw, 200px) minmax(0, 1fr); max-width: 820px; }
+  .wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
+  .wires path { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; }
+  .wires path.temp { stroke-dasharray: 6 6; opacity: .85; }
+  .wires path.good { stroke: var(--good); }
+  .wires path.bad { stroke: var(--bad); stroke-dasharray: 8 6; }
+  .mcol { display: grid; gap: 14px; align-content: start; }
+  .m-item {
+    position: relative; display: flex; align-items: center; gap: 12px; min-height: 76px; width: 100%;
+    padding: 10px 16px; font: 600 1.08rem var(--font); color: var(--text); text-align: left;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer;
+    box-shadow: var(--shadow); transition: border-color .15s, background-color .15s;
+    user-select: none; -webkit-user-select: none;
+  }
+  .m-item:hover { border-color: var(--line-strong); }
+  .m-item:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  .m-item.selected { border-color: var(--accent); background: linear-gradient(0deg, var(--accent-soft), var(--accent-soft)), var(--surface); }
+  .m-item.right { border-color: var(--good); }
+  .m-item.wrong { border-color: var(--bad); }
+  .m-item .thumb { width: 64px; flex-shrink: 0; }
+  .m-item .txt { display: flex; flex-direction: column; min-width: 0; }
+  .m-item .chip { font: 500 .78rem var(--font); color: var(--faint); margin-top: 1px; }
+  .m-item.paired .chip { color: var(--accent); }
+  .m-item.right .chip { color: var(--good); }
+  .m-item.wrong .chip { color: var(--bad); }
+  .dot {
+    position: absolute; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%;
+    background: var(--bg); border: 3px solid var(--line-strong); touch-action: none; cursor: crosshair; z-index: 3;
+  }
+  .col-l .dot { right: -12px; }
+  .col-r .dot { left: -12px; }
+  .m-item.paired .dot, .m-item.selected .dot { border-color: var(--accent); background: var(--accent); }
+  .m-item.right .dot { border-color: var(--good); background: var(--good); }
+  .m-item.wrong .dot { border-color: var(--bad); background: var(--bad); }
+  .col-r .m-item { justify-content: center; text-align: center; padding-left: 20px; }
+  .actions { margin-top: 20px; }
+
+  .explain { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+  .explain .card { padding: 16px 18px; }
+  .explain .card .chart { max-width: 220px; margin: 0 0 8px; }
+  .explain h4 { margin: 0 0 4px; font-size: 1.05rem; }
+  .explain .tag { font: 600 .74rem var(--mono); color: var(--faint); letter-spacing: .05em; }
+  .explain p { margin: 6px 0 0; color: var(--muted); font-size: .93rem; }
+  .link-note { margin-top: 14px; padding: 16px 18px; border-left: 4px solid var(--blue); }
+  .link-note p { margin: 0; color: var(--muted); }
+  .link-note b { color: var(--text); }
+  @media (max-width: 560px) {
+    .m-item { padding: 8px 12px; font-size: .98rem; min-height: 70px; gap: 8px; }
+    .m-item .thumb { width: 44px; }
+    .col-r .m-item { padding-left: 14px; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="crumb">KAUST Academy · Applied CV · <b>Day 3 Lab</b> · Exercise 3</div>
+    <div class="tools">
+      <button class="icon-btn" id="smaller" title="Smaller text" aria-label="Smaller text">A−</button>
+      <button class="icon-btn" id="bigger" title="Bigger text" aria-label="Bigger text">A+</button>
+      <button class="icon-btn" id="theme" title="Switch theme" aria-label="Switch between dark and light mode">
+        <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>
+        <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+        <span class="theme-label" id="theme-label">Light mode</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <nav class="exnav" aria-label="Day 3 exercises"><span class="lbl">DAY 3 EXERCISES</span><a href="day3-1-choose-backbone.html">1 · Backbone</a><a href="day3-2-finetune-recipe.html">2 · Recipe</a><a href="day3-3-learning-curves.html" aria-current="page">3 · Curves</a><a href="day3-4-fix-the-fit.html">4 · Fix the fit</a></nav>
+
+  <header class="hero">
+    <p class="kicker">EXERCISE 3 · READING LEARNING CURVES</p>
+    <h1>Which graph is which?</h1>
+    <p class="lede">Three models, three pairs of learning curves. Each graph shows <strong>training</strong> and <strong>validation</strong> error over the epochs. Your job: diagnose each one.</p>
+    <div class="collab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.3A5 5 0 0 1 21 19"/></svg>
+      <div><b>Work with the person next to you.</b> Agree on an answer together before you check it.</div>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span>The curves</h2>
+    <div class="figure" id="figure">
+      <div class="card fig"><h3>Graph 1</h3><div data-chart="under"></div></div>
+      <div class="card fig"><h3>Graph 2</h3><div data-chart="fit"></div></div>
+      <div class="card fig"><h3>Graph 3</h3><div data-chart="over" id="g3chart"></div></div>
+    </div>
+    <div class="legend-row"><span class="lt">Training error</span><span class="lv">Validation error</span></div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>Match them</h2>
+    <p class="hint">Click a graph, then click its diagnosis. You can also drag from one dot to the other. Click again to change a match.</p>
+    <div class="mboard" id="mboard">
+      <svg class="wires" id="wires" aria-hidden="true"></svg>
+      <div class="mcol col-l" id="left"></div>
+      <div></div>
+      <div class="mcol col-r" id="right"></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="check" disabled>Check our matches</button>
+      <button class="btn" id="show" hidden>Show the answer</button>
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+  </section>
+
+  <section class="reveal" id="debrief">
+    <h2><span class="num">03</span>Debrief: how to read them</h2>
+    <div class="explain">
+      <div class="card"><div data-chart="under" data-mini="1"></div><span class="tag">GRAPH 1</span><h4>Underfitting · high bias</h4><p>Both curves flatten early at a <b>high</b> error and stay close together. The model can't even fit its own training data: too simple, too frozen, or not trained long enough.</p></div>
+      <div class="card"><div data-chart="fit" data-mini="1"></div><span class="tag">GRAPH 2</span><h4>Fitted · good fit</h4><p>Both errors fall and settle <b>low</b>, with a small, stable gap. Validation tracks training. This is what we want.</p></div>
+      <div class="card"><div data-chart="over" data-mini="1"></div><span class="tag">GRAPH 3</span><h4>Overfitting · high variance</h4><p>Training error keeps dropping toward zero, but validation error bottoms out and then <b>climbs</b>. After that point the model is memorising the training set. Early stopping keeps the checkpoint at the lowest validation error.</p></div>
+    </div>
+    <div class="card link-note">
+      <p><b>Back to our notebook:</b> the summary table calls Phase 1 (frozen backbone, ~40% accuracy) <b>bias</b>-limited, like Graph 1. Unfreezing Stage 4 gives the model more capacity, so the risk shifts to <b>variance</b>: watch for Graph 3. Exercise 4 asks what to do about each.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Day 3 · Lab · Fine-tuning &amp; advanced training · lab by <b>Anas Aldadi</b></span>
+    <span><button class="linkbtn" id="reset">Reset this page</button> &nbsp;·&nbsp; <a class="next" href="day3-4-fix-the-fit.html">Next: Fix the fit →</a></span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+
+  var $ = function (id) { return document.getElementById(id); };
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800); }
+  (function () {
+    var root = document.documentElement;
+    function syncTheme() {
+      var dark = root.getAttribute('data-theme') !== 'light';
+      $('ico-sun').style.display = dark ? '' : 'none';
+      $('ico-moon').style.display = dark ? 'none' : '';
+      $('theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+    }
+    $('theme').addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('ai256p-theme', next); } catch (e) {}
+      syncTheme();
+      window.dispatchEvent(new Event('layoutchange'));
+    });
+    function scale(d) {
+      var cur = parseFloat(getComputedStyle(root).getPropertyValue('--scale')) || 1;
+      var nx = Math.min(1.5, Math.max(0.85, Math.round((cur + d) * 100) / 100));
+      root.style.setProperty('--scale', nx);
+      try { localStorage.setItem('ai256p-scale', nx); } catch (e) {}
+      window.dispatchEvent(new Event('layoutchange'));
+    }
+    $('bigger').addEventListener('click', function () { scale(0.1); });
+    $('smaller').addEventListener('click', function () { scale(-0.1); });
+    syncTheme();
+  })();
+
+
+  var CURVES = {
+    under: { train: function (t) { return 0.40 + 0.56 * Math.exp(-6 * t); },
+             val:   function (t) { return 0.44 + 0.53 * Math.exp(-6 * t); } },
+    fit:   { train: function (t) { return 0.15 + 0.80 * Math.exp(-5.5 * t); },
+             val:   function (t) { return 0.27 + 0.70 * Math.exp(-4.5 * t); } },
+    over:  { train: function (t) { return 0.03 + 0.92 * Math.exp(-5 * t); },
+             val:   function (t) { return 0.31 + 0.62 * Math.exp(-10 * t) + 0.42 * t * t; } }
+  };
+  function chartSVG(kind, mini) {
+    var x0 = 30, y0 = 178, x1 = 304, yT = 14;
+    var X = function (t) { return x0 + 10 + t * (x1 - x0 - 22); };
+    var Y = function (e) { return y0 - 6 - e * (y0 - yT - 18); };
+    var c = CURVES[kind];
+    function path(f) {
+      var d = '';
+      for (var i = 0; i <= 80; i++) { var t = i / 80; d += (i ? 'L' : 'M') + X(t).toFixed(1) + ' ' + Y(f(t)).toFixed(1); }
+      return d;
+    }
+    var s = '<svg class="chart' + (mini ? ' mini' : '') + '" viewBox="0 0 320 200" role="img" aria-label="Training and validation error over epochs">';
+    s += '<path class="axis" d="M' + x0 + ' ' + (yT + 6) + 'V' + y0 + 'H' + (x1 - 6) + '"/>';
+    s += '<polygon class="arrow" points="' + (x0 - 6) + ',' + (yT + 8) + ' ' + x0 + ',' + (yT - 2) + ' ' + (x0 + 6) + ',' + (yT + 8) + '"/>';
+    s += '<polygon class="arrow" points="' + (x1 - 8) + ',' + (y0 - 6) + ' ' + (x1 + 2) + ',' + y0 + ' ' + (x1 - 8) + ',' + (y0 + 6) + '"/>';
+    s += '<path class="val" d="' + path(c.val) + '"/>';
+    s += '<path class="train" d="' + path(c.train) + '"/>';
+    if (!mini) {
+      s += '<text class="ax-lbl" x="' + (x0 + 8) + '" y="' + (yT + 6) + '">Error</text>';
+      s += '<text class="ax-lbl" x="' + (x1 - 4) + '" y="' + (y0 + 18) + '" text-anchor="end">Epochs</text>';
+      var vy = Y(c.val(1)), ty = Y(c.train(1));
+      s += '<text class="lbl-val" x="' + (x1 - 10) + '" y="' + (vy - 9) + '" text-anchor="end">Validation</text>';
+      s += '<text class="lbl-train" x="' + (x1 - 10) + '" y="' + (ty > 150 ? ty - 9 : ty + 20) + '" text-anchor="end">Training</text>';
+      if (kind === 'over') {
+        var best = 0, bv = 9;
+        for (var i = 0; i <= 200; i++) { var t = i / 200, v = c.val(t); if (v < bv) { bv = v; best = t; } }
+        var bx = X(best), by = Y(bv);
+        s += '<g class="anno"><line x1="' + bx + '" y1="' + (by + 6) + '" x2="' + bx + '" y2="' + y0 + '"/>' +
+             '<circle cx="' + bx + '" cy="' + by + '" r="5"/>' +
+             '<text x="' + bx + '" y="' + (y0 + 17) + '" text-anchor="middle">best epoch · early stopping</text></g>';
+      }
+    }
+    return s + '</svg>';
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-chart]'), function (el) {
+    el.innerHTML = chartSVG(el.dataset.chart, !!el.dataset.mini);
+  });
+
+  var LEFT  = [ { id: 'g1', kind: 'under', name: 'Graph 1' }, { id: 'g2', kind: 'fit', name: 'Graph 2' }, { id: 'g3', kind: 'over', name: 'Graph 3' } ];
+  var RIGHT = [ { id: 'over', name: 'Overfitting' }, { id: 'under', name: 'Underfitting' }, { id: 'fit', name: 'Fitted' } ];
+  var NAMES = { over: 'Overfitting', under: 'Underfitting', fit: 'Fitted' };
+  var ANSWER = { g1: 'under', g2: 'fit', g3: 'over' };
+  var pairs = {}, selected = null, result = null;
+  var board = $('mboard'), wires = $('wires');
+
+  LEFT.forEach(function (g) {
+    var b = document.createElement('button');
+    b.className = 'm-item'; b.dataset.side = 'L'; b.dataset.id = g.id;
+    b.innerHTML = '<span class="thumb">' + chartSVG(g.kind, true) + '</span><span class="txt"><span>' + g.name + '</span><span class="chip"></span></span><span class="dot"></span>';
+    $('left').appendChild(b);
+  });
+  RIGHT.forEach(function (r) {
+    var b = document.createElement('button');
+    b.className = 'm-item'; b.dataset.side = 'R'; b.dataset.id = r.id;
+    b.innerHTML = '<span class="dot"></span><span>' + r.name + '</span>';
+    $('right').appendChild(b);
+  });
+  function item(side, id) { return board.querySelector('.m-item[data-side="' + side + '"][data-id="' + id + '"]'); }
+
+  function link(a, b) {
+    var l = a.side === 'L' ? a.id : b.id, r = a.side === 'R' ? a.id : b.id;
+    Object.keys(pairs).forEach(function (k) { if (pairs[k] === r) delete pairs[k]; });
+    pairs[l] = r; selected = null; result = null;
+    update();
+  }
+
+  function update() {
+    Array.prototype.forEach.call(board.querySelectorAll('.m-item'), function (el) {
+      var side = el.dataset.side, id = el.dataset.id;
+      var paired = side === 'L' ? !!pairs[id] : Object.keys(pairs).some(function (k) { return pairs[k] === id; });
+      el.classList.toggle('paired', paired);
+      el.classList.toggle('selected', !!selected && selected.side === side && selected.id === id);
+      var ok = null;
+      if (result) {
+        var l = side === 'L' ? id : Object.keys(pairs).filter(function (k) { return pairs[k] === id; })[0];
+        ok = l ? result[l] : null;
+      }
+      el.classList.toggle('right', ok === true);
+      el.classList.toggle('wrong', ok === false);
+      if (side === 'L') el.querySelector('.chip').textContent = pairs[id] ? '→ ' + NAMES[pairs[id]] : 'unmatched';
+      el.setAttribute('aria-pressed', el.classList.contains('selected') ? 'true' : 'false');
+      el.setAttribute('aria-label', side === 'L'
+        ? el.textContent.replace(/→.*|unmatched/, '').trim() + (pairs[id] ? ', matched to ' + NAMES[pairs[id]] : ', not matched')
+        : NAMES[id]);
+    });
+    $('check').disabled = Object.keys(pairs).length < 3;
+    if (!result) { $('feedback').className = 'feedback'; }
+    drawWires();
+  }
+
+  function center(el) {
+    var d = el.querySelector('.dot').getBoundingClientRect(), b = board.getBoundingClientRect();
+    return { x: d.left + d.width / 2 - b.left, y: d.top + d.height / 2 - b.top };
+  }
+  function curve(p, q) {
+    var dx = Math.max(30, Math.abs(q.x - p.x) * 0.5);
+    return 'M' + p.x + ' ' + p.y + ' C' + (p.x + dx) + ' ' + p.y + ',' + (q.x - dx) + ' ' + q.y + ',' + q.x + ' ' + q.y;
+  }
+  var temp = null;
+  function drawWires() {
+    var s = '';
+    Object.keys(pairs).forEach(function (l) {
+      var cls = result ? (result[l] ? 'good' : 'bad') : '';
+      s += '<path class="' + cls + '" d="' + curve(center(item('L', l)), center(item('R', pairs[l]))) + '"/>';
+    });
+    if (temp) s += '<path class="temp" d="' + (temp.side === 'L' ? curve(temp.from, temp.to) : curve(temp.to, temp.from)) + '"/>';
+    wires.innerHTML = s;
+  }
+
+  // click-to-match
+  var justDragged = false;
+  board.addEventListener('click', function (e) {
+    var el = e.target.closest('.m-item'); if (!el || justDragged) return;
+    var me = { side: el.dataset.side, id: el.dataset.id };
+    if (selected && selected.side !== me.side) { link(selected, me); return; }
+    selected = (selected && selected.id === me.id) ? null : me;
+    update();
+  });
+
+  // drag-to-match (from a dot; mouse can drag from the whole card)
+  var drag = null;
+  board.addEventListener('pointerdown', function (e) {
+    var el = e.target.closest('.m-item'); if (!el) return;
+    if (!e.target.closest('.dot') && e.pointerType !== 'mouse') return;
+    drag = { el: el, side: el.dataset.side, id: el.dataset.id, x: e.clientX, y: e.clientY, moved: false, pid: e.pointerId };
+    if (e.target.closest('.dot')) e.preventDefault();
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 7) return;
+    drag.moved = true; e.preventDefault();
+    var b = board.getBoundingClientRect();
+    temp = { side: drag.side, from: center(drag.el), to: { x: e.clientX - b.left, y: e.clientY - b.top } };
+    drawWires();
+  });
+  window.addEventListener('pointerup', function (e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    if (drag.moved) {
+      var over = document.elementFromPoint(e.clientX, e.clientY);
+      var tgt = over && over.closest ? over.closest('.m-item') : null;
+      if (tgt && tgt.dataset.side !== drag.side) link({ side: drag.side, id: drag.id }, { side: tgt.dataset.side, id: tgt.dataset.id });
+      justDragged = true; setTimeout(function () { justDragged = false; }, 0);
+    }
+    temp = null; drag = null; drawWires();
+  });
+  window.addEventListener('pointercancel', function () { temp = null; drag = null; drawWires(); });
+  window.addEventListener('resize', drawWires);
+  window.addEventListener('layoutchange', function () { requestAnimationFrame(drawWires); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWires);
+
+  function check() {
+    result = {}; var right = 0;
+    LEFT.forEach(function (g) { result[g.id] = pairs[g.id] === ANSWER[g.id]; if (result[g.id]) right++; });
+    selected = null; update();
+    var fb = $('feedback');
+    if (right === 3) {
+      fb.className = 'feedback show good';
+      fb.innerHTML = '<b>All 3 correct.</b> Look at Graph 3 again: the green marker shows where early stopping would save the model.';
+      $('g3chart').querySelector('.chart').classList.add('annotate');
+      $('debrief').classList.add('show'); $('show').hidden = true;
+    } else {
+      fb.className = 'feedback show bad';
+      fb.innerHTML = '<b>' + right + ' of 3 correct.</b> Red lines are wrong. Hint: compare where each curve <i>ends</i>, and what validation error does late in training.';
+      $('show').hidden = false;
+    }
+  }
+  $('check').addEventListener('click', check);
+  $('show').addEventListener('click', function () {
+    pairs = { g1: 'under', g2: 'fit', g3: 'over' }; check();
+    $('debrief').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('reset').addEventListener('click', function () {
+    pairs = {}; selected = null; result = null; update();
+    $('show').hidden = true; $('debrief').classList.remove('show');
+    $('g3chart').querySelector('.chart').classList.remove('annotate');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  update();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choose the Backbone · Day 3</title>
+<meta name="description" content="Day 3 Lab, section 0.2: pick a pretrained backbone for an on-device face classifier and defend your choice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+  // Apply saved theme / text size before paint (default: dark).
+  (function () {
+    try {
+      var t = localStorage.getItem('ai256p-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      var s = localStorage.getItem('ai256p-scale');
+      if (s) document.documentElement.style.setProperty('--scale', s);
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root {
+    --scale: 1;
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    --radius: 14px;
+    --maxw: 1080px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1220;
+    --bg-grid: rgba(148, 163, 196, 0.06);
+    --surface: #151c2e;
+    --surface-2: #1b2439;
+    --line: #2a3550;
+    --line-strong: #3a4766;
+    --text: #e8edf6;
+    --muted: #9ba7bf;
+    --faint: #6f7c96;
+    --accent: #f5a524;
+    --accent-ink: #1a1203;
+    --accent-soft: rgba(245, 165, 36, 0.14);
+    --blue: #6ea8ff;
+    --blue-soft: rgba(110, 168, 255, 0.13);
+    --good: #3ecf8e;
+    --good-soft: rgba(62, 207, 142, 0.14);
+    --bad: #ff6b7d;
+    --bad-soft: rgba(255, 107, 125, 0.12);
+    --warn: #f5c451;
+    --bar: #6ea8ff;
+    --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.25);
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-grid: rgba(15, 23, 42, 0.05);
+    --surface: #f6f7fa;
+    --surface-2: #eef1f6;
+    --line: #d5dbe6;
+    --line-strong: #aeb8c9;
+    --text: #0b1220;
+    --muted: #3f4a5e;
+    --faint: #5f6b80;
+    --accent: #b45f00;
+    --accent-ink: #ffffff;
+    --accent-soft: rgba(180, 95, 0, 0.10);
+    --blue: #1d4ed8;
+    --blue-soft: rgba(29, 78, 216, 0.09);
+    --good: #047857;
+    --good-soft: rgba(4, 120, 87, 0.10);
+    --bad: #be123c;
+    --bad-soft: rgba(190, 18, 60, 0.08);
+    --warn: #92400e;
+    --bar: #1d4ed8;
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html { font-size: calc(17px * var(--scale)); -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.6;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  a { color: var(--blue); }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+  .crumb { font-family: var(--mono); font-size: .78rem; color: var(--muted); letter-spacing: .02em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crumb b { color: var(--text); font-weight: 600; }
+  .tools { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    font: 600 .82rem var(--font);
+    color: var(--text); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; height: 36px; min-width: 36px; padding: 0 10px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+  }
+  .icon-btn:hover { border-color: var(--line-strong); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .theme-label { display: none; }
+  @media (min-width: 640px) { .theme-label { display: inline; } }
+
+  /* ---------- pipeline strip ---------- */
+  .pipeline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 18px 0 8px; }
+  .step {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: .82rem; color: var(--faint);
+    border: 1px solid var(--line); border-radius: 9px; padding: 4px 10px 4px 5px; background: var(--surface);
+  }
+  .step i {
+    font-style: normal; font-family: var(--mono); font-size: .72rem; width: 20px; height: 20px; border-radius: 50%;
+    display: inline-grid; place-items: center; background: var(--surface-2); color: var(--faint);
+  }
+  .step.on { color: var(--text); border-color: var(--blue); background: var(--blue-soft); font-weight: 600; }
+  .step.on i { background: var(--blue); color: var(--bg); }
+  .arrow { color: var(--faint); font-size: .8rem; }
+
+  /* ---------- header ---------- */
+  header.hero { padding: 18px 0 8px; }
+  .kicker { font-family: var(--mono); color: var(--accent); font-size: .85rem; letter-spacing: .04em; margin: 0 0 6px; }
+  h1 { font-size: clamp(1.8rem, 4.2vw, 2.7rem); line-height: 1.15; margin: 0 0 14px; letter-spacing: -0.015em; }
+  .lede { font-size: 1.08rem; color: var(--muted); max-width: 68ch; margin: 0; }
+  .lede strong { color: var(--text); }
+
+  section { margin: 34px 0; scroll-margin-top: 72px; }
+  h2 { font-size: 1.3rem; margin: 0 0 14px; letter-spacing: -0.005em; display: flex; align-items: baseline; gap: 10px; }
+  h2 .num { font-family: var(--mono); font-size: .85rem; color: var(--accent); font-weight: 500; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+  /* ---------- mission ---------- */
+  .mission { padding: 26px 26px 22px; border-left: 4px solid var(--accent); }
+  .mission .tag { display: inline-block; font-family: var(--mono); font-size: .75rem; color: var(--accent); background: var(--accent-soft); padding: 2px 9px; border-radius: 999px; margin-bottom: 12px; letter-spacing: .04em; }
+  .mission p { font-size: 1.18rem; line-height: 1.65; margin: 0 0 14px; }
+  .mission p:last-of-type { margin-bottom: 0; }
+  .constraints { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 20px; }
+  .constraint { background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; }
+  .constraint b { display: block; font-size: .95rem; margin-bottom: 2px; }
+  .constraint span { color: var(--muted); font-size: .9rem; }
+
+  /* ---------- how-to ---------- */
+  .howto { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .howto .card { padding: 16px 18px; }
+  .howto .n { font-family: var(--mono); color: var(--accent); font-size: .8rem; }
+  .howto h3 { margin: 4px 0 4px; font-size: 1.02rem; }
+  .howto p { margin: 0; color: var(--muted); font-size: .93rem; }
+  .collab {
+    margin-top: 12px; display: flex; gap: 12px; align-items: center; padding: 14px 18px;
+    background: var(--blue-soft); border: 1px dashed var(--blue); border-radius: var(--radius); color: var(--text);
+  }
+  .collab svg { flex-shrink: 0; width: 26px; height: 26px; color: var(--blue); }
+
+  /* ---------- candidates ---------- */
+  .cands-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .cands-head h2 { margin: 0; }
+  .hint { color: var(--faint); font-size: .88rem; }
+  .cands { display: grid; gap: 12px; }
+  .cand {
+    position: relative; display: grid; grid-template-columns: auto 1fr; gap: 6px 18px;
+    padding: 18px 20px; cursor: pointer; transition: border-color .15s, background-color .15s, transform .15s;
+  }
+  .cand:hover { border-color: var(--line-strong); }
+  .cand:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  .cand[aria-checked="true"] { border-color: var(--accent); background: linear-gradient(0deg, var(--accent-soft), var(--accent-soft)), var(--surface); }
+  .cand.locked { cursor: default; }
+  .cand.locked:not([aria-checked="true"]) { opacity: .62; }
+  .letter {
+    grid-row: span 3; width: 54px; height: 54px; border-radius: 12px; display: grid; place-items: center;
+    font: 600 1.45rem var(--mono); background: var(--surface-2); border: 1px solid var(--line); color: var(--text);
+  }
+  .cand[aria-checked="true"] .letter { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .cand-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+  .cand-name { font-weight: 600; font-size: 1.05rem; }
+  .params { font-family: var(--mono); font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
+  .params small { font-size: .9rem; color: var(--muted); font-weight: 500; margin-left: 3px; }
+  .bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; border: 1px solid var(--line); }
+  .bar > span { display: block; height: 100%; background: var(--bar); border-radius: 99px; }
+  .data { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: .98rem; }
+  .data .lbl { color: var(--muted); }
+  .ds { font-family: var(--mono); font-weight: 600; background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px; padding: 1px 9px; font-size: .95rem; }
+  .pick-badge { position: absolute; top: 14px; right: 16px; font: 600 .72rem var(--mono); letter-spacing: .06em; color: var(--accent-ink); background: var(--accent); padding: 3px 9px; border-radius: 999px; display: none; }
+  .cand[aria-checked="true"] .pick-badge { display: inline-block; }
+
+  .note-row { grid-column: 2; margin-top: 4px; }
+  .note-row label { font-size: .8rem; color: var(--faint); display: block; margin-bottom: 4px; }
+  .note-row input {
+    width: 100%; font: .92rem var(--font); color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 9px; padding: 8px 11px;
+  }
+  .note-row input::placeholder { color: var(--faint); }
+  .note-row input:focus { outline: 2px solid var(--blue); outline-offset: 0; border-color: transparent; }
+
+  .legend { margin-top: 10px; font-size: .83rem; color: var(--faint); }
+
+  /* ---------- answer ---------- */
+  .answer { padding: 22px; }
+  .chosen { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 11px; background: var(--surface-2); border: 1px solid var(--line); margin-bottom: 16px; min-height: 58px; }
+  .chosen .letter { width: 38px; height: 38px; font-size: 1.05rem; grid-row: auto; }
+  .chosen.empty { color: var(--faint); font-style: italic; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-weight: 600; margin-bottom: 6px; }
+  .field .sub { font-weight: 400; color: var(--faint); font-size: .86rem; }
+  .field input, .field textarea {
+    width: 100%; font: 1rem var(--font); color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; line-height: 1.55;
+  }
+  .field textarea { min-height: 170px; resize: vertical; }
+  .field input:focus, .field textarea:focus { outline: 2px solid var(--blue); outline-offset: 0; border-color: transparent; }
+  .field input:disabled, .field textarea:disabled { opacity: .8; }
+  .prompts { margin: 0 0 10px; padding-left: 1.2em; color: var(--muted); font-size: .92rem; }
+  .prompts li { margin: 2px 0; }
+  .meter { font-family: var(--mono); font-size: .8rem; color: var(--faint); text-align: right; margin-top: 4px; }
+  .meter.ok { color: var(--good); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn {
+    font: 600 .98rem var(--font); border-radius: 11px; padding: 11px 18px; cursor: pointer;
+    border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text);
+  }
+  .btn:hover:not(:disabled) { border-color: var(--text); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.06); border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.ghost { background: transparent; }
+  .status { font-size: .9rem; color: var(--muted); }
+  .status.good { color: var(--good); }
+
+  .locked-msg { display: none; margin-top: 16px; padding: 14px 16px; border-radius: 11px; background: var(--good-soft); border: 1px solid var(--good); }
+  .locked-msg.show { display: block; }
+  .locked-msg p { margin: 0 0 10px; }
+
+  /* ---------- debrief ---------- */
+  #debrief { display: none; }
+  #debrief.show { display: block; animation: rise .35s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .verdict-hero { padding: 22px 24px; border-left: 4px solid var(--good); margin-bottom: 14px; }
+  .verdict-hero h3 { margin: 0 0 6px; font-size: 1.25rem; }
+  .verdict-hero p { margin: 0; color: var(--muted); }
+  .verdict-hero p strong { color: var(--text); }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: .93rem; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 600; background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  td.mono { font-family: var(--mono); white-space: nowrap; }
+  tr.win td { background: var(--good-soft); }
+  .pill { display: inline-block; font: 600 .74rem var(--mono); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .pill.ok { color: var(--good); background: var(--good-soft); border: 1px solid var(--good); }
+  .pill.no { color: var(--bad); background: var(--bad-soft); border: 1px solid var(--bad); }
+  .pill.meh { color: var(--warn); background: var(--accent-soft); border: 1px solid var(--warn); }
+  .takeaways { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+  .takeaways .card { padding: 16px 18px; }
+  .takeaways h4 { margin: 0 0 6px; font-size: 1rem; }
+  .takeaways p { margin: 0; color: var(--muted); font-size: .93rem; }
+  code { font-family: var(--mono); font-size: .9em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 50px; padding: 20px 0 40px; color: var(--faint); font-size: .85rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .linkbtn { background: none; border: none; color: var(--faint); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .9rem; opacity: 0; pointer-events: none; transition: all .2s; z-index: 20; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 560px) {
+    .mission { padding: 20px 18px; }
+    .mission p { font-size: 1.06rem; }
+    .cand { grid-template-columns: 1fr; padding: 16px; }
+    .letter { grid-row: auto; width: 44px; height: 44px; font-size: 1.2rem; }
+    .note-row { grid-column: 1; }
+    .pick-badge { top: 16px; }
+  }
+
+  .exnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 22px 0 0; font-size: .84rem; }
+  .exnav .lbl { font-family: var(--mono); color: var(--faint); font-size: .74rem; letter-spacing: .04em; margin-right: 4px; }
+  .exnav a { text-decoration: none; color: var(--muted); border: 1px solid var(--line); background: var(--surface); padding: 3px 11px; border-radius: 999px; }
+  .exnav a:hover { border-color: var(--line-strong); color: var(--text); }
+  .exnav a[aria-current="page"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+  footer .next { font-weight: 600; text-decoration: none; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="crumb">KAUST Academy · Applied CV · <b>Day 3 Lab</b> · Exercise 0.2</div>
+    <div class="tools">
+      <button class="icon-btn" id="smaller" title="Smaller text" aria-label="Smaller text">A−</button>
+      <button class="icon-btn" id="bigger" title="Bigger text" aria-label="Bigger text">A+</button>
+      <button class="icon-btn" id="theme" title="Switch theme" aria-label="Switch between dark and light mode">
+        <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>
+        <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+        <span class="theme-label" id="theme-label">Light mode</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <nav class="exnav" aria-label="Day 3 exercises"><span class="lbl">DAY 3 EXERCISES</span><a href="day3-1-choose-backbone.html" aria-current="page">1 · Backbone</a><a href="day3-2-finetune-recipe.html">2 · Recipe</a><a href="day3-3-learning-curves.html">3 · Curves</a><a href="day3-4-fix-the-fit.html">4 · Fix the fit</a></nav>
+
+  <nav class="pipeline" aria-label="Lab flow">
+    <span class="step"><i>1</i>Data</span><span class="arrow">→</span>
+    <span class="step on"><i>2</i>Model</span><span class="arrow">→</span>
+    <span class="step"><i>3</i>Freeze</span><span class="arrow">→</span>
+    <span class="step"><i>4</i>Replace</span><span class="arrow">→</span>
+    <span class="step"><i>5</i>Finetune</span><span class="arrow">→</span>
+    <span class="step"><i>6</i>Evaluate</span>
+  </nav>
+
+  <header class="hero">
+    <p class="kicker">0.2 · CHOOSING OUR PRETRAINED MODEL</p>
+    <h1>Pick the backbone. Then defend it.</h1>
+    <p class="lede">The pretrained model (aka <strong>backbone</strong>) acts as a <strong>feature extractor</strong>, so our model doesn't have to learn everything about our data from zero. But that only helps if we pick the <em>right</em> one. Six candidates, one real-world job. Which would you ship?</p>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span>The mission</h2>
+    <div class="card mission">
+      <span class="tag">USE CASE</span>
+      <p>A startup is building a phone app. When the user points the camera at something, the app must answer one question: <strong>is there a human face in this image, yes or no?</strong></p>
+      <p>We have a labelled dataset of face / no-face images, and we will <strong>fine-tune a pretrained backbone</strong> on it. The catch: the finished model has to run <strong>on the phone itself</strong>.</p>
+      <div class="constraints">
+        <div class="constraint"><b>Runs on the device</b><span>No internet, no cloud GPU. Everything happens on the phone.</span></div>
+        <div class="constraint"><b>Limited memory &amp; battery</b><span>It shares a mid-range phone with every other app.</span></div>
+        <div class="constraint"><b>Has to feel instant</b><span>Users won't wait seconds for a yes / no.</span></div>
+        <div class="constraint"><b>Has to be right</b><span>A fast model that can't recognise a face is useless.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>How this works</h2>
+    <div class="howto">
+      <div class="card"><span class="n">STEP 1</span><h3>Read the candidates</h3><p>Each backbone shows only its <b>parameter count</b> and the <b>dataset it was pretrained on</b>. The architecture names are hidden on purpose.</p></div>
+      <div class="card"><span class="n">STEP 2</span><h3>Research the datasets</h3><p>Don't recognise a dataset name? Search it. What images are in it? What did the model learn to look at? Jot it in the note box.</p></div>
+      <div class="card"><span class="n">STEP 3</span><h3>Ask the three questions</h3><p><b>Data:</b> what does it already know? <b>Size:</b> will it fit and run on the phone? <b>Fit:</b> does it solve <em>my</em> problem?</p></div>
+      <div class="card"><span class="n">STEP 4</span><h3>Pick &amp; justify</h3><p>Choose one backbone and write down why. Then say why you rejected the others.</p></div>
+    </div>
+    <div class="collab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.3A5 5 0 0 1 21 19"/></svg>
+      <div><b>Work with the person next to you.</b> Split the research, compare notes, and argue it out. You can submit one answer per pair.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="cands-head">
+      <h2><span class="num">03</span>The candidates</h2>
+      <span class="hint">Sorted by size, smallest first · click a card to choose it</span>
+    </div>
+    <div class="cands" id="cands" role="radiogroup" aria-label="Backbone candidates"></div>
+    <p class="legend">Bar length = parameter count, on a linear scale.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>Your decision</h2>
+    <div class="card answer">
+      <div class="chosen empty" id="chosen">No backbone selected yet. Pick one above.</div>
+
+      <div class="field">
+        <label for="names">Your names <span class="sub">(you and your colleague)</span></label>
+        <input id="names" type="text" placeholder="e.g. Sara & Omar" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="reason">Why this backbone?</label>
+        <ul class="prompts">
+          <li>What is in its pretraining data, and why does that matter for <b>faces</b>?</li>
+          <li>Is its size reasonable for a <b>phone</b>? Roughly how much memory would it need?</li>
+          <li>Why not the smaller ones? Why not the bigger ones?</li>
+        </ul>
+        <textarea id="reason" placeholder="We chose Backbone … because …"></textarea>
+        <div class="meter" id="meter">0 words · write at least 25</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="lock" disabled>Lock in our answer</button>
+        <button class="btn ghost" id="edit" hidden>Edit answer</button>
+        <span class="status" id="status"></span>
+      </div>
+
+      <div class="locked-msg" id="locked-msg">
+        <p><b>Answer locked in.</b> Copy it for your notes or to share in the discussion, then wait for the class debrief.</p>
+        <div class="actions">
+          <button class="btn" id="copy">Copy our answer</button>
+          <button class="btn" id="reveal">Show the debrief</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="debrief" aria-live="polite">
+    <h2><span class="num">05</span>Debrief</h2>
+    <div class="card verdict-hero">
+      <h3>The pick: Backbone D (31 M parameters, pretrained on MS COCO)</h3>
+      <p><strong>It's the only candidate that has seen people.</strong> "Person" is the most common category in COCO's everyday scenes, so D's features already respond to heads, skin and faces. At 31 M parameters (~124 MB in FP32, ~31 MB once quantised to INT8) it still fits on a phone. The smaller models are cheaper but learned the wrong things. The bigger ones are too heavy for the device, and their pretraining data has no faces either.</p>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Backbone</th><th>Params</th><th>~FP32 size</th><th>Pretrained on</th><th>What that data actually is</th><th>Data fit</th><th>Phone fit</th></tr>
+        </thead>
+        <tbody id="debrief-rows"></tbody>
+      </table>
+    </div>
+
+    <div class="takeaways">
+      <div class="card"><h4>1 · Data first</h4><p>A backbone only extracts useful features if its pretraining images <em>look like yours</em>. Leaves, galaxies and satellite tiles teach filters that rarely fire on a face.</p></div>
+      <div class="card"><h4>2 · Then size</h4><p>Quick memory estimate: <code>params × 4 bytes</code> for FP32, <code>× 2</code> for FP16, <code>× 1</code> for INT8. 632 M params ≈ 2.5 GB in FP32. That won't run on a phone.</p></div>
+      <div class="card"><h4>3 · Smallest ≠ best</h4><p>A 15 M model that has never seen a face can need more data and more training than a 31 M model that has. Data mismatch costs you accuracy. Extra parameters cost you memory.</p></div>
+      <div class="card"><h4>4 · Big model, tiny data?</h4><p>Be suspicious of a 305 M model pretrained on ~8 K flower photos. That's a lot of parameters for very little data, so it has likely memorised its training set rather than learned general features.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Day 3 · Lab · Fine-tuning &amp; advanced training · lab by <b>Anas Aldadi</b></span>
+    <span><button class="linkbtn" id="reset">Reset this page</button> &nbsp;·&nbsp; <a class="next" href="day3-2-finetune-recipe.html">Next: Recipe →</a></span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  // ---------------- data ----------------
+  var MODELS = [
+    { id: 'A', params: 15,  data: 'PlantVillage',
+      what: '~54 K close-up photos of crop leaves, healthy vs. 38 disease classes, mostly on plain backgrounds.',
+      dataFit: ['no', 'No people. Learned leaf textures and lesion spots.'], phoneFit: ['ok', 'Fits easily'] },
+    { id: 'B', params: 20,  data: 'Galaxy Zoo 2',
+      what: '~300 K telescope images of galaxies (SDSS), labelled by shape (spiral, elliptical, merger…).',
+      dataFit: ['no', 'No people. Learned bright blobs on black.'], phoneFit: ['ok', 'Fits easily'] },
+    { id: 'C', params: 26,  data: 'Stanford Cars',
+      what: '~16 K photos of cars, 196 make / model / year classes.',
+      dataFit: ['meh', 'People may appear in the background, but the model was only ever asked about cars.'], phoneFit: ['ok', 'Fits'] },
+    { id: 'D', params: 31,  data: 'MS COCO', win: true,
+      what: '~330 K everyday scenes with 80 object categories. "Person" is by far the most frequent one.',
+      dataFit: ['ok', 'Has seen hundreds of thousands of people, in every pose and setting.'], phoneFit: ['ok', 'Fits, even better once quantised'] },
+    { id: 'E', params: 305, data: 'Oxford 102 Flowers',
+      what: '~8 K photos of flowers across 102 species.',
+      dataFit: ['no', 'No people. And a huge model on a tiny dataset.'], phoneFit: ['no', '~1.2 GB, too heavy'] },
+    { id: 'F', params: 632, data: 'EuroSAT',
+      what: '27 K Sentinel-2 satellite tiles in 10 land-use classes (forest, river, highway…).',
+      dataFit: ['no', 'No people. Viewed from orbit.'], phoneFit: ['no', '~2.5 GB, far too heavy'] }
+  ];
+  var MAX = Math.max.apply(null, MODELS.map(function (m) { return m.params; }));
+  var KEY = 'ai256p-day3-ex02';
+
+  // ---------------- storage (best effort) ----------------
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  var state = Object.assign({ pick: null, notes: {}, names: '', reason: '', locked: false, revealed: false }, load());
+
+  // ---------------- helpers ----------------
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+  function words(s) { return (s.trim().match(/\S+/g) || []).length; }
+  function fp32(p) { var mb = p * 4; return mb >= 1000 ? (mb / 1000).toFixed(1) + ' GB' : mb + ' MB'; }
+  var MIN_WORDS = 25;
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800); }
+
+  // ---------------- candidates ----------------
+  var cands = $('cands');
+  MODELS.forEach(function (m) {
+    var el = document.createElement('div');
+    el.className = 'card cand';
+    el.setAttribute('role', 'radio');
+    el.setAttribute('tabindex', '0');
+    el.dataset.id = m.id;
+    var w = Math.max(1.5, (m.params / MAX) * 100);
+    el.innerHTML =
+      '<span class="pick-badge">OUR PICK</span>' +
+      '<div class="letter">' + m.id + '</div>' +
+      '<div class="cand-top"><span class="cand-name">Backbone ' + m.id + '</span>' +
+        '<span class="params">' + m.params + '<small>M params</small></span></div>' +
+      '<div class="bar" aria-hidden="true"><span style="width:' + w + '%"></span></div>' +
+      '<div class="data"><span class="lbl">Pretrained on</span><span class="ds">' + esc(m.data) + '</span></div>' +
+      '<div class="note-row"><label for="note-' + m.id + '">Our research note: what\'s in ' + esc(m.data) + '?</label>' +
+        '<input id="note-' + m.id + '" type="text" placeholder="e.g. images of …" autocomplete="off"></div>';
+    cands.appendChild(el);
+
+    var note = el.querySelector('input');
+    note.value = state.notes[m.id] || '';
+    note.addEventListener('click', function (e) { e.stopPropagation(); });
+    note.addEventListener('keydown', function (e) { e.stopPropagation(); });
+    note.addEventListener('input', function () { state.notes[m.id] = note.value; save(); });
+
+    el.addEventListener('click', function () { choose(m.id); });
+    el.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); choose(m.id); }
+      var i = MODELS.indexOf(m);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); var n = cands.children[Math.min(i + 1, MODELS.length - 1)]; n.focus(); }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); var p = cands.children[Math.max(i - 1, 0)]; p.focus(); }
+    });
+  });
+
+  function choose(id) {
+    if (state.locked) { toast('Answer is locked. Click "Edit answer" to change it.'); return; }
+    state.pick = id; save(); render();
+  }
+
+  // ---------------- debrief table ----------------
+  var rows = MODELS.map(function (m) {
+    var lbl = { ok: '✓ good', no: '✗ poor', meh: '~ weak' };
+    return '<tr class="' + (m.win ? 'win' : '') + '">' +
+      '<td><b>' + m.id + '</b>' + (m.win ? ' ★' : '') + '</td>' +
+      '<td class="mono">' + m.params + ' M</td>' +
+      '<td class="mono">' + fp32(m.params) + '</td>' +
+      '<td><b>' + esc(m.data) + '</b></td>' +
+      '<td>' + esc(m.what) + '</td>' +
+      '<td><span class="pill ' + m.dataFit[0] + '">' + lbl[m.dataFit[0]] + '</span><br><span style="color:var(--muted);font-size:.86rem">' + esc(m.dataFit[1]) + '</span></td>' +
+      '<td><span class="pill ' + m.phoneFit[0] + '">' + lbl[m.phoneFit[0]] + '</span><br><span style="color:var(--muted);font-size:.86rem">' + esc(m.phoneFit[1]) + '</span></td>' +
+      '</tr>';
+  }).join('');
+  $('debrief-rows').innerHTML = rows;
+
+  // ---------------- form ----------------
+  var names = $('names'), reason = $('reason');
+  names.value = state.names; reason.value = state.reason;
+  names.addEventListener('input', function () { state.names = names.value; save(); });
+  reason.addEventListener('input', function () { state.reason = reason.value; save(); render(); });
+
+  $('lock').addEventListener('click', function () {
+    if (!state.pick || words(state.reason) < MIN_WORDS) return;
+    state.locked = true; save(); render(); toast('Locked in');
+  });
+  $('edit').addEventListener('click', function () { state.locked = false; save(); render(); });
+  $('reveal').addEventListener('click', function () {
+    state.revealed = true; save(); render();
+    $('debrief').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('copy').addEventListener('click', function () {
+    var m = MODELS.filter(function (x) { return x.id === state.pick; })[0];
+    var notes = MODELS.filter(function (x) { return (state.notes[x.id] || '').trim(); })
+      .map(function (x) { return '  ' + x.id + ' (' + x.data + '): ' + state.notes[x.id].trim(); }).join('\n');
+    var txt = 'Day 3 Lab · 0.2 Choosing the backbone\n' +
+      'Names: ' + (state.names.trim() || '-') + '\n' +
+      'Pick: Backbone ' + m.id + ' (' + m.params + 'M params, pretrained on ' + m.data + ')\n\n' +
+      'Why:\n' + state.reason.trim() + (notes ? '\n\nResearch notes:\n' + notes : '') + '\n';
+    var done = function () { toast('Copied to clipboard'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done, function () { fallbackCopy(txt); done(); });
+    } else { fallbackCopy(txt); done(); }
+  });
+  function fallbackCopy(txt) {
+    var ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta);
+  }
+  $('reset').addEventListener('click', function () {
+    state = { pick: null, notes: {}, names: '', reason: '', locked: false, revealed: false };
+    save(); names.value = ''; reason.value = '';
+    Array.prototype.forEach.call(document.querySelectorAll('.note-row input'), function (i) { i.value = ''; });
+    render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ---------------- render ----------------
+  function render() {
+    Array.prototype.forEach.call(cands.children, function (el) {
+      var on = el.dataset.id === state.pick;
+      el.setAttribute('aria-checked', on ? 'true' : 'false');
+      el.classList.toggle('locked', state.locked);
+    });
+    var chosen = $('chosen');
+    var m = MODELS.filter(function (x) { return x.id === state.pick; })[0];
+    if (m) {
+      chosen.className = 'chosen';
+      chosen.innerHTML = '<div class="letter" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)">' + m.id + '</div>' +
+        '<div><b>Backbone ' + m.id + '</b> · <span style="font-family:var(--mono)">' + m.params + ' M</span> params · pretrained on <b>' + esc(m.data) + '</b></div>';
+    } else {
+      chosen.className = 'chosen empty';
+      chosen.textContent = 'No backbone selected yet. Pick one above.';
+    }
+    var n = words(state.reason);
+    var meter = $('meter');
+    meter.textContent = n + (n === 1 ? ' word' : ' words') + (n < MIN_WORDS ? ' · write at least ' + MIN_WORDS : ' · good');
+    meter.classList.toggle('ok', n >= MIN_WORDS);
+
+    var ready = !!state.pick && n >= MIN_WORDS;
+    $('lock').disabled = !ready || state.locked;
+    $('lock').hidden = state.locked;
+    $('edit').hidden = !state.locked;
+    names.disabled = reason.disabled = state.locked;
+    $('status').textContent = state.locked ? '' : (!state.pick ? 'Pick a backbone first.' : (n < MIN_WORDS ? 'Explain your choice to continue.' : 'Ready when you are.'));
+    $('status').className = 'status' + (ready && !state.locked ? ' good' : '');
+    $('locked-msg').classList.toggle('show', state.locked);
+    $('debrief').classList.toggle('show', state.locked && state.revealed);
+  }
+
+  // ---------------- theme & text size ----------------
+  var root = document.documentElement;
+  function syncTheme() {
+    var dark = root.getAttribute('data-theme') !== 'light';
+    $('ico-sun').style.display = dark ? '' : 'none';
+    $('ico-moon').style.display = dark ? 'none' : '';
+    $('theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+  }
+  $('theme').addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('ai256p-theme', next); } catch (e) {}
+    syncTheme();
+  });
+  function scale(d) {
+    var cur = parseFloat(getComputedStyle(root).getPropertyValue('--scale')) || 1;
+    var nx = Math.min(1.5, Math.max(0.85, Math.round((cur + d) * 100) / 100));
+    root.style.setProperty('--scale', nx);
+    try { localStorage.setItem('ai256p-scale', nx); } catch (e) {}
+  }
+  $('bigger').addEventListener('click', function () { scale(0.1); });
+  $('smaller').addEventListener('click', function () { scale(-0.1); });
+
+  syncTheme();
+  render();
+})();
+</script>
+</body>
+</html>
