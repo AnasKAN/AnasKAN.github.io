@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluating Detectors · Day 4</title>
+<meta name="description" content="Day 4 Lab, exercise 3: definition and use-case questions on mAP, false positives, misses and thresholds.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('ai256p-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      var s = localStorage.getItem('ai256p-scale');
+      if (s) document.documentElement.style.setProperty('--scale', s);
+    } catch (e) {}
+  })();
+</script>
+<style>
+
+  :root {
+    --scale: 1;
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    --radius: 14px;
+    --maxw: 1080px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1220; --bg-grid: rgba(148,163,196,0.06);
+    --surface: #151c2e; --surface-2: #1b2439; --line: #2a3550; --line-strong: #3a4766;
+    --text: #e8edf6; --muted: #9ba7bf; --faint: #6f7c96;
+    --accent: #f5a524; --accent-ink: #1a1203; --accent-soft: rgba(245,165,36,0.14);
+    --blue: #6ea8ff; --blue-soft: rgba(110,168,255,0.13);
+    --good: #3ecf8e; --good-soft: rgba(62,207,142,0.14);
+    --bad: #ff6b7d; --bad-soft: rgba(255,107,125,0.12);
+    --warn: #f5c451;
+    --train: #ff5f6d; --val: #5aa2ff;
+    --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.25);
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --bg-grid: rgba(15,23,42,0.05);
+    --surface: #f6f7fa; --surface-2: #eef1f6; --line: #d5dbe6; --line-strong: #aeb8c9;
+    --text: #0b1220; --muted: #3f4a5e; --faint: #5f6b80;
+    --accent: #b45f00; --accent-ink: #ffffff; --accent-soft: rgba(180,95,0,0.10);
+    --blue: #1d4ed8; --blue-soft: rgba(29,78,216,0.09);
+    --good: #047857; --good-soft: rgba(4,120,87,0.10);
+    --bad: #be123c; --bad-soft: rgba(190,18,60,0.08);
+    --warn: #92400e;
+    --train: #d4283a; --val: #1f5fd6;
+    --shadow: 0 1px 2px rgba(15,23,42,0.06);
+  }
+  * { box-sizing: border-box; }
+  html { font-size: calc(17px * var(--scale)); -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background-color: var(--bg);
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--text); font-family: var(--font); line-height: 1.6;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  a { color: var(--blue); }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+  .topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .topbar .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+  .crumb { font-family: var(--mono); font-size: .78rem; color: var(--muted); letter-spacing: .02em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crumb b { color: var(--text); font-weight: 600; }
+  .tools { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn { font: 600 .82rem var(--font); color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; height: 36px; min-width: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+  .icon-btn:hover { border-color: var(--line-strong); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .theme-label { display: none; }
+  @media (min-width: 640px) { .theme-label { display: inline; } }
+
+  .exnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 22px 0 0; font-size: .84rem; }
+  .exnav .lbl { font-family: var(--mono); color: var(--faint); font-size: .74rem; letter-spacing: .04em; margin-right: 4px; }
+  .exnav a { text-decoration: none; color: var(--muted); border: 1px solid var(--line); background: var(--surface); padding: 3px 11px; border-radius: 999px; }
+  .exnav a:hover { border-color: var(--line-strong); color: var(--text); }
+  .exnav a[aria-current="page"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+  header.hero { padding: 26px 0 4px; }
+  .kicker { font-family: var(--mono); color: var(--accent); font-size: .85rem; letter-spacing: .04em; margin: 0 0 6px; }
+  h1 { font-size: clamp(1.8rem, 4.2vw, 2.7rem); line-height: 1.15; margin: 0 0 14px; letter-spacing: -0.015em; }
+  .lede { font-size: 1.08rem; color: var(--muted); max-width: 68ch; margin: 0; }
+  .lede strong { color: var(--text); }
+  section { margin: 34px 0; scroll-margin-top: 72px; }
+  h2 { font-size: 1.3rem; margin: 0 0 14px; letter-spacing: -0.005em; display: flex; align-items: baseline; gap: 10px; }
+  h2 .num { font-family: var(--mono); font-size: .85rem; color: var(--accent); font-weight: 500; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+
+  .collab { display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: var(--blue-soft); border: 1px dashed var(--blue); border-radius: var(--radius); margin-top: 18px; max-width: 68ch; }
+  .collab svg { flex-shrink: 0; width: 24px; height: 24px; color: var(--blue); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn { font: 600 .98rem var(--font); border-radius: 11px; padding: 11px 18px; cursor: pointer; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); }
+  .btn:hover:not(:disabled) { border-color: var(--text); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.06); border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn[hidden] { display: none; }
+  .feedback { margin-top: 14px; padding: 12px 16px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface-2); display: none; }
+  .feedback.show { display: block; }
+  .feedback.good { background: var(--good-soft); border-color: var(--good); }
+  .feedback.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .feedback b { font-size: 1.05rem; }
+
+  .reveal { display: none; }
+  .reveal.show { display: block; animation: rise .35s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .takeaways { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+  .takeaways .card { padding: 16px 18px; }
+  .takeaways h4 { margin: 0 0 6px; font-size: 1rem; }
+  .takeaways p { margin: 0; color: var(--muted); font-size: .93rem; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 50px; padding: 20px 0 40px; color: var(--faint); font-size: .85rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+  footer .next { font-weight: 600; text-decoration: none; }
+  .linkbtn { background: none; border: none; color: var(--faint); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .9rem; opacity: 0; pointer-events: none; transition: all .2s; z-index: 20; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+
+  .progress { position: sticky; top: 64px; z-index: 4; display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin: 0 0 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); max-width: 900px; }
+  .progress .ptxt { font: 600 .88rem var(--mono); white-space: nowrap; }
+  .pbar { flex: 1; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; border: 1px solid var(--line); }
+  .pbar span { display: block; height: 100%; width: 0; background: var(--good); transition: width .3s; }
+  .q { padding: 22px 22px 20px; margin-bottom: 16px; max-width: 900px; scroll-margin-top: 130px; }
+  .q-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .q-num { font: 600 .78rem var(--mono); color: var(--accent); letter-spacing: .05em; }
+  .q-kind { font: 600 .7rem var(--mono); letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--muted); }
+  .q-kind.case { color: var(--blue); border-color: var(--blue); background: var(--blue-soft); }
+  .q h3 { font-size: 1.22rem; line-height: 1.35; margin: 0 0 4px; }
+  .q .sub { color: var(--faint); font-size: .88rem; margin: 0 0 14px; }
+  .q .ctx { background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; padding: 10px 14px; margin: 8px 0 12px; font-size: .95rem; }
+  .q .ctx code { font-size: .9em; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+  .opt { display: flex; flex-direction: column; justify-content: center; gap: 2px; text-align: left; min-height: 54px; padding: 10px 14px 10px 46px; position: relative; cursor: pointer; font: 500 .98rem var(--font); color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 11px; transition: border-color .15s, background-color .15s; line-height: 1.4; }
+  .opt:hover { border-color: var(--line-strong); }
+  .opt:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  .opt::before { content: ""; position: absolute; left: 14px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border: 2px solid var(--line-strong); border-radius: 6px; background: var(--surface); }
+  .opt[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .opt[aria-checked="true"]::before { background: var(--accent); border-color: var(--accent); }
+  .opt[aria-checked="true"]::after { content: ""; position: absolute; left: 21px; top: 50%; width: 6px; height: 11px; margin-top: -8px; border: solid var(--accent-ink); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+  .opt .why, .opt .tagx { display: none; }
+  .opt .why { font-size: .84rem; color: var(--muted); font-weight: 400; }
+  .opt .tagx { font: 600 .7rem var(--mono); letter-spacing: .05em; }
+  .q.revealed .opt { cursor: default; }
+  .q.revealed .opt .why, .q.revealed .opt .tagx { display: block; }
+  .q.revealed .opt.hit { border-color: var(--good); background: var(--good-soft); }
+  .q.revealed .opt.hit .tagx, .q.revealed .opt.miss .tagx { color: var(--good); }
+  .q.revealed .opt.miss { border: 2px dashed var(--good); }
+  .q.revealed .opt.wrongpick { border-color: var(--bad); background: var(--bad-soft); }
+  .q.revealed .opt.wrongpick .tagx { color: var(--bad); }
+  .q.revealed .opt.wrongpick::before { background: var(--bad); border-color: var(--bad); }
+  .q.revealed .opt.neutral { opacity: .6; }
+  .q.revealed .opt.neutral .tagx { color: var(--faint); }
+  .q .actions { margin-top: 16px; }
+  .count { font-family: var(--mono); font-size: .85rem; color: var(--faint); }
+  @media (max-width: 600px) { .q { padding: 18px 16px; } .q h3 { font-size: 1.08rem; } .opts { grid-template-columns: 1fr; } .progress { top: 60px; } }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); max-width: 900px; }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: .95rem; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 600; background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  .wrapnote { color: var(--muted); max-width: 900px; margin: 0 0 14px; }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="crumb">KAUST Academy · Applied CV · <b>Day 4 Lab</b> · Exercise 3</div>
+    <div class="tools">
+      <button class="icon-btn" id="smaller" title="Smaller text" aria-label="Smaller text">A−</button>
+      <button class="icon-btn" id="bigger" title="Bigger text" aria-label="Bigger text">A+</button>
+      <button class="icon-btn" id="theme" title="Switch theme" aria-label="Switch between dark and light mode">
+        <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>
+        <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+        <span class="theme-label" id="theme-label">Light mode</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  
+
+  <header class="hero">
+    <p class="kicker">DAY 4 · EXERCISE 3 · EVALUATING A DETECTOR</p>
+    <h1>Past the single number.</h1>
+    <p class="lede"><code>mAP50-95 = 0.52</code> tells you <em>where</em> you are, not <em>what to change next</em>. Eight questions: some test the definitions, most are <strong>use cases</strong> where you read the evidence and pick the fixes. Each one can have <strong>several</strong> correct answers, and you need all of them.</p>
+    <div class="collab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.3A5 5 0 0 1 21 19"/></svg>
+      <div><b>Work with the person next to you.</b> Agree on an answer together before you check it.</div>
+    </div>
+  </header>
+
+  <section>
+    <div class="progress" aria-live="polite"><span class="ptxt" id="ptxt"></span><div class="pbar"><span id="pbar"></span></div></div>
+    <div id="questions"></div>
+  </section>
+
+  <section class="reveal" id="wrapup">
+    <h2><span class="num">✓</span>Cheat sheet: from errors to a plan</h2>
+    <p class="wrapnote">Attack the biggest slice first. Notice that most fixes are <b>data</b> or <b>post-processing</b>, not a new architecture.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Error type</th><th>What it means</th><th>Usual fix</th></tr></thead>
+        <tbody>
+          <tr><td><b>Localisation</b></td><td>right class, IoU too low</td><td>tighter annotation, higher <code>imgsz</code></td></tr>
+          <tr><td><b>Classification</b></td><td>right box, wrong label</td><td>clarify the class boundary in the labelling guide</td></tr>
+          <tr><td><b>Duplicate</b></td><td>second box on an already-matched object</td><td>lower the NMS IoU</td></tr>
+          <tr><td><b>Background</b></td><td>a box where there is nothing</td><td>add background-only images</td></tr>
+          <tr><td><b>Missed (FN)</b></td><td>no prediction above threshold</td><td>lower confidence, fix small-object recall</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="takeaways">
+      <div class="card"><h4>Measuring vs deploying</h4><p>Measure mAP at confidence ≈ 0.001, because it integrates the whole precision–recall curve. Use the high thresholds only for deployment.</p></div>
+      <div class="card"><h4>Size buckets (COCO)</h4><p>small &lt; 32² px · medium &lt; 96² px · large above that. Slice your misses by size before you fix anything.</p></div>
+      <div class="card"><h4>Thresholds are a cost decision</h4><p>Recall first when a miss is expensive. Precision first when every alert costs attention. Otherwise use the F1-optimal point, and always quote the threshold next to P / R.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Day 4 · Lab · Object detection with YOLO · lab by <b>Anas Aldadi</b></span>
+    <span><button class="linkbtn" id="reset">Reset this page</button></span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+
+  var $ = function (id) { return document.getElementById(id); };
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800); }
+  (function () {
+    var root = document.documentElement;
+    function syncTheme() {
+      var dark = root.getAttribute('data-theme') !== 'light';
+      $('ico-sun').style.display = dark ? '' : 'none';
+      $('ico-moon').style.display = dark ? 'none' : '';
+      $('theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+    }
+    $('theme').addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('ai256p-theme', next); } catch (e) {}
+      syncTheme();
+      window.dispatchEvent(new Event('layoutchange'));
+    });
+    function scale(d) {
+      var cur = parseFloat(getComputedStyle(root).getPropertyValue('--scale')) || 1;
+      var nx = Math.min(1.5, Math.max(0.85, Math.round((cur + d) * 100) / 100));
+      root.style.setProperty('--scale', nx);
+      try { localStorage.setItem('ai256p-scale', nx); } catch (e) {}
+      window.dispatchEvent(new Event('layoutchange'));
+    }
+    $('bigger').addEventListener('click', function () { scale(0.1); });
+    $('smaller').addEventListener('click', function () { scale(-0.1); });
+    syncTheme();
+  })();
+
+
+  var QUESTIONS = [
+    { kind: 'def', prompt: 'Which of these count as <b>false positives</b>?', options: [
+      { t: 'A second box on an object that is already matched', ok: 1, why: 'Duplicate. Only one prediction per object can be a TP.' },
+      { t: 'An object with no prediction above the threshold', ok: 0, why: 'That’s a false negative (a miss), not a false positive.' },
+      { t: 'A box on empty background', ok: 1, why: 'Background error.' },
+      { t: 'A confident box matching the object with IoU 0.8', ok: 0, why: 'Right class, good overlap: a true positive.' },
+      { t: 'The right box, but the wrong class label', ok: 1, why: 'Classification error.' },
+      { t: 'The right class, but its IoU with the object is too low', ok: 1, why: 'Localisation error.' }
+    ]},
+    { kind: 'def', prompt: 'Which statements about <b>mAP50</b> and <b>mAP50-95</b> are true?', options: [
+      { t: 'mAP is the percentage of images classified correctly', ok: 0, why: 'It’s the area under the precision–recall curve, averaged over classes.' },
+      { t: 'mAP50 asks only: did I find the object? (IoU ≥ 0.5)', ok: 1, why: 'One lenient IoU threshold.' },
+      { t: 'mAP50-95 averages over IoU 0.50, 0.55, … 0.95', ok: 1, why: 'Did I find it <i>and</i> box it tightly? The more honest number.' },
+      { t: 'Measure mAP at your deployment confidence, e.g. 0.5', ok: 0, why: 'Measure at ≈ 0.001. A high threshold cuts the PR curve short.' },
+      { t: 'A rare class counts as much as a common one', ok: 1, why: 'AP is computed per class, then averaged.' },
+      { t: 'mAP50-95 is usually lower than mAP50', ok: 1, why: 'Stricter IoU thresholds turn loose boxes into misses.' }
+    ]},
+    { kind: 'case', prompt: 'Your test results are in. What does this tell you, and what should you try?',
+      context: '<code>mAP50 = 0.86</code> &nbsp;·&nbsp; <code>mAP50-95 = 0.41</code>', options: [
+      { t: 'The model misses most objects', ok: 0, why: 'mAP50 = 0.86 says it finds them.' },
+      { t: 'It finds objects but doesn’t box them tightly', ok: 1, why: 'A big gap between the two numbers means loose boxes.' },
+      { t: 'Lower the NMS IoU threshold', ok: 0, why: 'That removes duplicates. It doesn’t tighten boxes.' },
+      { t: 'Expect many localisation errors', ok: 1, why: 'Right class, IoU too low.' },
+      { t: 'Check that the annotations are tight and consistent', ok: 1, why: 'Loose labels teach loose boxes.' },
+      { t: 'Try a higher <code>imgsz</code>', ok: 1, why: 'More pixels per object means more precise edges.' }
+    ]},
+    { kind: 'case', prompt: 'The error analysis says most false positives are <b>duplicates</b>. What should you do?', options: [
+      { t: 'Raise the NMS IoU threshold', ok: 0, why: 'More permissive: even more duplicates survive.' },
+      { t: 'Add background-only images', ok: 0, why: 'That targets background errors.' },
+      { t: 'Lower the NMS IoU threshold', ok: 1, why: 'More aggressive suppression removes near-duplicates.' },
+      { t: 'Lower the confidence threshold', ok: 0, why: 'More boxes survive, including more duplicates.' },
+      { t: 'Then check that overlapping objects (helmet on head) still survive', ok: 1, why: 'NMS can’t tell a duplicate from two real overlapping objects.' },
+      { t: 'Clarify the labelling guide', ok: 0, why: 'That targets classification errors.' }
+    ]},
+    { kind: 'case', prompt: 'Many <b>background</b> false positives: boxes on scaffolding, traffic cones and empty sky. What helps?', options: [
+      { t: 'Delete the training images that contain no objects', ok: 0, why: 'Those are exactly the negatives that teach the model what <i>nothing</i> looks like.' },
+      { t: 'Add background-only images to training', ok: 1, why: 'Show the model more of what “nothing” looks like.' },
+      { t: 'Lower the NMS IoU threshold', ok: 0, why: 'Background boxes aren’t duplicates of anything.' },
+      { t: 'Raise the confidence threshold for deployment', ok: 1, why: 'Fewer low-score boxes get reported, at some cost to recall.' },
+      { t: 'Lower the confidence threshold', ok: 0, why: 'Even more low-score boxes get through.' },
+      { t: 'Report mAP50 instead of mAP50-95', ok: 0, why: 'That changes the score, not the model.' }
+    ]},
+    { kind: 'case', prompt: 'What’s true here, and what would help?',
+      context: 'Recall by object size: &nbsp;<code>small 0.31</code> · <code>medium 0.78</code> · <code>large 0.92</code>', options: [
+      { t: 'Lower the NMS IoU threshold', ok: 0, why: 'Suppression isn’t why small objects are missed.' },
+      { t: 'Raise <code>imgsz</code> (640 → 1024)', ok: 1, why: 'The #1 fix for small objects, at quadratic compute cost.' },
+      { t: '“Small” means an area under 32² pixels', ok: 1, why: 'COCO buckets: small < 32², medium < 96², large above.' },
+      { t: 'Switch to a smaller model (<code>yolo11n</code>)', ok: 0, why: 'Faster, but usually worse at small objects.' },
+      { t: 'Lower the confidence threshold', ok: 1, why: 'Small objects often score low. A lower threshold recovers some misses.' },
+      { t: 'Add background-only images', ok: 0, why: 'That targets background false positives, not misses.' }
+    ]},
+    { kind: 'case', prompt: 'Many <b>classification</b> errors: <code>helmet</code> and <code>head</code> keep getting swapped. What should you do?', options: [
+      { t: 'Lower the NMS IoU threshold', ok: 0, why: 'That targets duplicates.' },
+      { t: 'Check a sample of those labels by hand', ok: 1, why: 'Is it the model, or are the labels inconsistent?' },
+      { t: 'Add background-only images', ok: 0, why: 'That targets background errors.' },
+      { t: 'Clarify the class boundary in the labelling guide', ok: 1, why: 'For example, when does a head count as wearing a helmet?' },
+      { t: 'Delete the <code>head</code> class', ok: 0, why: 'That changes the task instead of fixing it.' }
+    ]},
+    { kind: 'case', prompt: 'You deploy the detector for site safety. A missed worker without a helmet is very costly, and a human reviews every alert. How do you set it up?', options: [
+      { t: 'Prioritise precision', ok: 0, why: 'Precision first is for when every alert costs attention.' },
+      { t: 'Prioritise recall', ok: 1, why: 'A miss is the expensive mistake here.' },
+      { t: 'Use a high confidence threshold', ok: 0, why: 'That trades recall for precision, the wrong way round here.' },
+      { t: 'Use a low confidence threshold', ok: 1, why: 'Catch more, and let the human filter.' },
+      { t: 'Quote the threshold next to the precision and recall numbers', ok: 1, why: 'P and R mean nothing without the threshold they were measured at.' },
+      { t: 'Deploy at the mAP confidence (≈ 0.001)', ok: 0, why: 'That’s for measuring. In deployment it would flood the reviewers.' }
+    ]}
+  ];
+
+  var QS = [];
+  var host = $('questions');
+  QUESTIONS.forEach(function (Q, qi) {
+    var el = document.createElement('div');
+    el.className = 'card q'; el.id = 'q' + (qi + 1);
+    el.innerHTML = '<div class="q-top"><span class="q-num">QUESTION ' + (qi + 1) + ' OF ' + QUESTIONS.length + '</span>' +
+      '<span class="q-kind ' + (Q.kind === 'case' ? 'case' : '') + '">' + (Q.kind === 'case' ? 'USE CASE' : 'DEFINITION') + '</span></div>' +
+      '<h3>' + Q.prompt + '</h3>' + (Q.context ? '<div class="ctx">' + Q.context + '</div>' : '') +
+      '<p class="sub">Select all that apply. Every correct answer, no wrong ones.</p>' +
+      '<div class="opts" role="group"></div>' +
+      '<div class="actions"><button class="btn primary" data-act="check" disabled>Check</button>' +
+      '<button class="btn" data-act="show" hidden>Show answers</button><span class="count"></span></div>' +
+      '<div class="feedback" aria-live="polite"></div>';
+    host.appendChild(el);
+    var q = { Q: Q, el: el, picked: {}, done: false, solved: false, total: Q.options.filter(function (o) { return o.ok; }).length };
+    var box = el.querySelector('.opts');
+    Q.options.forEach(function (o, oi) {
+      var b = document.createElement('button');
+      b.className = 'opt'; b.setAttribute('role', 'checkbox'); b.setAttribute('aria-checked', 'false'); b.dataset.i = oi;
+      b.innerHTML = '<span class="tagx"></span><span>' + o.t + '</span><span class="why">' + o.why + '</span>';
+      b.addEventListener('click', function () {
+        if (q.done) return;
+        q.picked[oi] = !q.picked[oi];
+        b.setAttribute('aria-checked', q.picked[oi] ? 'true' : 'false');
+        el.querySelector('.feedback').className = 'feedback';
+        sync(q);
+      });
+      box.appendChild(b);
+    });
+    el.querySelector('[data-act="check"]').addEventListener('click', function () { check(q); });
+    el.querySelector('[data-act="show"]').addEventListener('click', function () { reveal(q, false); });
+    QS.push(q); sync(q);
+  });
+  function nPicked(q) { return Object.keys(q.picked).filter(function (k) { return q.picked[k]; }).length; }
+  function sync(q) {
+    var n = nPicked(q);
+    q.el.querySelector('[data-act="check"]').disabled = n === 0 || q.done;
+    q.el.querySelector('.count').textContent = q.done ? '' : n + ' selected';
+  }
+  function progress() {
+    var solved = QS.filter(function (q) { return q.solved; }).length, done = QS.filter(function (q) { return q.done; }).length;
+    $('ptxt').textContent = solved + ' / ' + QS.length + ' solved' + (done > solved ? ' · ' + (done - solved) + ' revealed' : '');
+    $('pbar').style.width = (100 * done / QS.length) + '%';
+    if (done === QS.length) $('wrapup').classList.add('show');
+  }
+  function check(q) {
+    var hits = 0, wrong = 0;
+    q.Q.options.forEach(function (o, i) { if (q.picked[i]) { if (o.ok) hits++; else wrong++; } });
+    var fb = q.el.querySelector('.feedback');
+    if (hits === q.total && wrong === 0) {
+      fb.className = 'feedback show good';
+      fb.innerHTML = '<b>Exactly right' + (q.total > 1 ? ': all ' + q.total + ', no extras' : '') + '.</b> The reason for each option is shown above.';
+      q.solved = true; reveal(q, true);
+    } else {
+      fb.className = 'feedback show bad';
+      var parts = ['you found <b>' + hits + ' of ' + q.total + '</b> correct answers'];
+      if (wrong) parts.push('<b>' + wrong + '</b> of your picks ' + (wrong === 1 ? 'is' : 'are') + ' wrong');
+      fb.innerHTML = '<b>Not yet.</b> Hint: ' + parts.join(', and ') + '. Change your picks and check again.';
+      q.el.querySelector('[data-act="show"]').hidden = false;
+    }
+  }
+  function reveal(q, solved) {
+    q.done = true; q.el.classList.add('revealed');
+    Array.prototype.forEach.call(q.el.querySelectorAll('.opt'), function (b) {
+      var o = q.Q.options[+b.dataset.i], picked = !!q.picked[+b.dataset.i];
+      var cls = o.ok && picked ? 'hit' : o.ok ? 'miss' : picked ? 'wrongpick' : 'neutral';
+      b.classList.add(cls); b.setAttribute('aria-disabled', 'true');
+      b.querySelector('.tagx').textContent = { hit: '✓ CORRECT', miss: '✓ MISSED', wrongpick: '✗ WRONG PICK', neutral: '✗ NOT THIS ONE' }[cls];
+    });
+    q.el.querySelector('[data-act="show"]').hidden = true;
+    q.el.querySelector('[data-act="check"]').hidden = true;
+    if (!solved) {
+      var fb = q.el.querySelector('.feedback');
+      fb.className = 'feedback show';
+      fb.innerHTML = '<b>Answers shown.</b> Solid green = you got it · dashed green = you missed it · red = you picked it, but it’s wrong.';
+    }
+    sync(q); progress();
+  }
+  $('reset').addEventListener('click', function () {
+    QS.forEach(function (q) {
+      q.picked = {}; q.done = false; q.solved = false; q.el.classList.remove('revealed');
+      Array.prototype.forEach.call(q.el.querySelectorAll('.opt'), function (b) {
+        b.className = 'opt'; b.setAttribute('aria-checked', 'false'); b.removeAttribute('aria-disabled'); b.querySelector('.tagx').textContent = '';
+      });
+      q.el.querySelector('.feedback').className = 'feedback';
+      q.el.querySelector('[data-act="show"]').hidden = true;
+      q.el.querySelector('[data-act="check"]').hidden = false;
+      sync(q);
+    });
+    $('wrapup').classList.remove('show'); progress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  progress();
+
+})();
+</script>
+</body>
+</html>

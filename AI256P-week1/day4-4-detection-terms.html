@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detection Terms · Day 4</title>
+<meta name="description" content="Day 4 Lab, exercise 4: match eight object-detection terms (YOLO, DETR, NMS, IoU, mAP and more) to their definitions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('ai256p-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      var s = localStorage.getItem('ai256p-scale');
+      if (s) document.documentElement.style.setProperty('--scale', s);
+    } catch (e) {}
+  })();
+</script>
+<style>
+
+  :root {
+    --scale: 1;
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    --radius: 14px;
+    --maxw: 1080px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1220; --bg-grid: rgba(148,163,196,0.06);
+    --surface: #151c2e; --surface-2: #1b2439; --line: #2a3550; --line-strong: #3a4766;
+    --text: #e8edf6; --muted: #9ba7bf; --faint: #6f7c96;
+    --accent: #f5a524; --accent-ink: #1a1203; --accent-soft: rgba(245,165,36,0.14);
+    --blue: #6ea8ff; --blue-soft: rgba(110,168,255,0.13);
+    --good: #3ecf8e; --good-soft: rgba(62,207,142,0.14);
+    --bad: #ff6b7d; --bad-soft: rgba(255,107,125,0.12);
+    --warn: #f5c451;
+    --train: #ff5f6d; --val: #5aa2ff;
+    --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.25);
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --bg-grid: rgba(15,23,42,0.05);
+    --surface: #f6f7fa; --surface-2: #eef1f6; --line: #d5dbe6; --line-strong: #aeb8c9;
+    --text: #0b1220; --muted: #3f4a5e; --faint: #5f6b80;
+    --accent: #b45f00; --accent-ink: #ffffff; --accent-soft: rgba(180,95,0,0.10);
+    --blue: #1d4ed8; --blue-soft: rgba(29,78,216,0.09);
+    --good: #047857; --good-soft: rgba(4,120,87,0.10);
+    --bad: #be123c; --bad-soft: rgba(190,18,60,0.08);
+    --warn: #92400e;
+    --train: #d4283a; --val: #1f5fd6;
+    --shadow: 0 1px 2px rgba(15,23,42,0.06);
+  }
+  * { box-sizing: border-box; }
+  html { font-size: calc(17px * var(--scale)); -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background-color: var(--bg);
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--text); font-family: var(--font); line-height: 1.6;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  a { color: var(--blue); }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+  .topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .topbar .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+  .crumb { font-family: var(--mono); font-size: .78rem; color: var(--muted); letter-spacing: .02em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crumb b { color: var(--text); font-weight: 600; }
+  .tools { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn { font: 600 .82rem var(--font); color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; height: 36px; min-width: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+  .icon-btn:hover { border-color: var(--line-strong); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .theme-label { display: none; }
+  @media (min-width: 640px) { .theme-label { display: inline; } }
+
+  .exnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 22px 0 0; font-size: .84rem; }
+  .exnav .lbl { font-family: var(--mono); color: var(--faint); font-size: .74rem; letter-spacing: .04em; margin-right: 4px; }
+  .exnav a { text-decoration: none; color: var(--muted); border: 1px solid var(--line); background: var(--surface); padding: 3px 11px; border-radius: 999px; }
+  .exnav a:hover { border-color: var(--line-strong); color: var(--text); }
+  .exnav a[aria-current="page"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+  header.hero { padding: 26px 0 4px; }
+  .kicker { font-family: var(--mono); color: var(--accent); font-size: .85rem; letter-spacing: .04em; margin: 0 0 6px; }
+  h1 { font-size: clamp(1.8rem, 4.2vw, 2.7rem); line-height: 1.15; margin: 0 0 14px; letter-spacing: -0.015em; }
+  .lede { font-size: 1.08rem; color: var(--muted); max-width: 68ch; margin: 0; }
+  .lede strong { color: var(--text); }
+  section { margin: 34px 0; scroll-margin-top: 72px; }
+  h2 { font-size: 1.3rem; margin: 0 0 14px; letter-spacing: -0.005em; display: flex; align-items: baseline; gap: 10px; }
+  h2 .num { font-family: var(--mono); font-size: .85rem; color: var(--accent); font-weight: 500; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+
+  .collab { display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: var(--blue-soft); border: 1px dashed var(--blue); border-radius: var(--radius); margin-top: 18px; max-width: 68ch; }
+  .collab svg { flex-shrink: 0; width: 24px; height: 24px; color: var(--blue); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn { font: 600 .98rem var(--font); border-radius: 11px; padding: 11px 18px; cursor: pointer; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); }
+  .btn:hover:not(:disabled) { border-color: var(--text); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.06); border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn[hidden] { display: none; }
+  .feedback { margin-top: 14px; padding: 12px 16px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface-2); display: none; }
+  .feedback.show { display: block; }
+  .feedback.good { background: var(--good-soft); border-color: var(--good); }
+  .feedback.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .feedback b { font-size: 1.05rem; }
+
+  .reveal { display: none; }
+  .reveal.show { display: block; animation: rise .35s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .takeaways { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+  .takeaways .card { padding: 16px 18px; }
+  .takeaways h4 { margin: 0 0 6px; font-size: 1rem; }
+  .takeaways p { margin: 0; color: var(--muted); font-size: .93rem; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 50px; padding: 20px 0 40px; color: var(--faint); font-size: .85rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+  footer .next { font-weight: 600; text-decoration: none; }
+  .linkbtn { background: none; border: none; color: var(--faint); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .9rem; opacity: 0; pointer-events: none; transition: all .2s; z-index: 20; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+
+  .mhint { color: var(--faint); font-size: .9rem; margin: 0 0 14px; }
+  .mboard { position: relative; display: grid; grid-template-columns: minmax(0, var(--lw, 1fr)) clamp(48px, 12vw, 150px) minmax(0, var(--rw, 1fr)); max-width: 900px; }
+  .wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 2; }
+  .wires path { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; }
+  .wires path.temp { stroke-dasharray: 6 6; opacity: .85; }
+  .wires path.good { stroke: var(--good); }
+  .wires path.bad { stroke: var(--bad); stroke-dasharray: 8 6; }
+  .mcol { display: flex; flex-direction: column; gap: 12px; }
+  .mcol.col-l { justify-content: space-around; }
+  .m-item {
+    position: relative; display: flex; align-items: center; gap: 12px; min-height: 66px; width: 100%;
+    padding: 10px 16px; font: 600 1.05rem var(--font); color: var(--text); text-align: left; line-height: 1.4;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer;
+    box-shadow: var(--shadow); transition: border-color .15s, background-color .15s; user-select: none; -webkit-user-select: none;
+  }
+  .m-item:hover { border-color: var(--line-strong); }
+  .m-item:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  .m-item.selected { border-color: var(--accent); background: linear-gradient(0deg, var(--accent-soft), var(--accent-soft)), var(--surface); }
+  .m-item.right { border-color: var(--good); }
+  .m-item.wrong { border-color: var(--bad); }
+  .m-item .txt { display: flex; flex-direction: column; min-width: 0; }
+  .m-item .chip { font: 500 .78rem var(--font); color: var(--faint); margin-top: 1px; }
+  .m-item.paired .chip { color: var(--accent); }
+  .m-item.right .chip { color: var(--good); }
+  .m-item.wrong .chip { color: var(--bad); }
+  .col-r .m-item { font-weight: 500; font-size: .98rem; padding-left: 22px; }
+  .dot { position: absolute; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; background: var(--bg); border: 3px solid var(--line-strong); touch-action: none; cursor: crosshair; z-index: 3; }
+  .col-l .dot { right: -12px; }
+  .col-r .dot { left: -12px; }
+  .m-item.paired .dot, .m-item.selected .dot { border-color: var(--accent); background: var(--accent); }
+  .m-item.right .dot { border-color: var(--good); background: var(--good); }
+  .m-item.wrong .dot { border-color: var(--bad); background: var(--bad); }
+  .match-actions { margin-top: 20px; }
+  @media (max-width: 560px) {
+    .mboard { grid-template-columns: minmax(0, var(--lw-m, var(--lw, 1fr))) 34px minmax(0, var(--rw-m, var(--rw, 1fr))); }
+    .m-item { padding: 8px 12px; font-size: .95rem; gap: 8px; }
+    .col-l .m-item { padding-right: 18px; }
+    .col-r .m-item { font-size: .88rem; padding-left: 18px; }
+  }
+
+  .mboard { --lw: .5fr; --rw: 1.5fr; --lw-m: .82fr; --rw-m: 1.18fr; max-width: 980px; }
+  @media (max-width: 560px) { .col-l .m-item { font-size: .9rem; } }
+  .col-l .m-item { min-height: 58px; }
+  .col-r .m-item { min-height: 58px; }
+  .gloss { display: grid; gap: 8px; max-width: 980px; margin: 0; padding: 0; list-style: none; }
+  .gloss li { display: grid; grid-template-columns: 200px 1fr auto; gap: 14px; padding: 12px 16px; align-items: baseline; }
+  .gloss b { font-size: 1.02rem; }
+  .gloss span { color: var(--muted); }
+  .gloss em { font: 500 .78rem var(--mono); color: var(--faint); font-style: normal; white-space: nowrap; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); max-width: 980px; margin-top: 14px; }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: .95rem; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 600; background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  h3.sub { font-size: 1.05rem; margin: 26px 0 0; }
+  @media (max-width: 640px) { .gloss li { grid-template-columns: 1fr; gap: 2px; } }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="crumb">KAUST Academy · Applied CV · <b>Day 4 Lab</b> · Exercise 4</div>
+    <div class="tools">
+      <button class="icon-btn" id="smaller" title="Smaller text" aria-label="Smaller text">A−</button>
+      <button class="icon-btn" id="bigger" title="Bigger text" aria-label="Bigger text">A+</button>
+      <button class="icon-btn" id="theme" title="Switch theme" aria-label="Switch between dark and light mode">
+        <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>
+        <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+        <span class="theme-label" id="theme-label">Light mode</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  
+
+  <header class="hero">
+    <p class="kicker">DAY 4 · EXERCISE 4 · THE VOCABULARY</p>
+    <h1>Name the thing.</h1>
+    <p class="lede">Eight terms you met today, eight definitions. <strong>Connect each term to its definition.</strong> Some pairs are close cousins, so read the definitions carefully.</p>
+    <div class="collab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.3A5 5 0 0 1 21 19"/></svg>
+      <div><b>Work with the person next to you.</b> Agree on an answer together before you check it.</div>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span>Match term → definition</h2>
+    
+    <p class="mhint">Click an item on the left, then its match on the right. You can also drag from one dot to the other. Click again to change a match.</p>
+    <div class="mboard" id="mboard">
+      <svg class="wires" id="wires" aria-hidden="true"></svg>
+      <div class="mcol col-l" id="left"></div>
+      <div></div>
+      <div class="mcol col-r" id="right"></div>
+    </div>
+    <div class="actions match-actions">
+      <button class="btn primary" id="check" disabled>Check our matches</button>
+      <button class="btn" id="show" hidden>Show the answer</button>
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+
+  </section>
+
+  <section class="reveal" id="debrief">
+    <h2><span class="num">02</span>Glossary</h2>
+    <ul class="gloss">
+      <li class="card"><b>Bounding box</b><span>A rectangle marking where an object is: 4 numbers plus a class. VOC, COCO and YOLO write it differently.</span><em>§2</em></li>
+      <li class="card"><b>YOLO</b><span>One-stage detector. A grid of cells predicts boxes and classes in a single forward pass, fast enough for video.</span><em>§3</em></li>
+      <li class="card"><b>Confidence score</b><span>Objectness × class probability. A good <i>ranking</i>, not a calibrated probability. You threshold it.</span><em>§3–4</em></li>
+      <li class="card"><b>NMS</b><span>Non-maximum suppression. Keep the highest-scoring box, delete its overlapping near-duplicates, repeat. Pure geometry after the forward pass.</span><em>§4</em></li>
+      <li class="card"><b>IoU</b><span>Intersection over union: overlap area ÷ combined area. Symmetric, scale-free, in [0, 1]. It decides whether a prediction matches a ground-truth box.</span><em>§5</em></li>
+      <li class="card"><b>mAP</b><span>AP (area under one class's precision–recall curve), averaged over classes. mAP50 uses IoU 0.5; mAP50-95 averages 0.50 to 0.95.</span><em>§5</em></li>
+      <li class="card"><b>DETR / RT-DETR</b><span>Transformer detector that predicts a fixed set of boxes. No NMS at inference, and constant latency.</span><em>§7</em></li>
+      <li class="card"><b>Hungarian matching</b><span>How DETR trains: each prediction is paired with at most one ground-truth box, so a duplicate is punished by the loss itself.</span><em>§7</em></li>
+    </ul>
+    <h3 class="sub">YOLO vs RT-DETR at a glance</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th></th><th>YOLO11</th><th>RT-DETR</th></tr></thead>
+        <tbody>
+          <tr><td><b>Duplicates removed by</b></td><td><b>NMS</b> after the forward pass</td><td>the <b>loss</b> (Hungarian matching)</td></tr>
+          <tr><td><b>Thresholds to tune</b></td><td>confidence <b>and</b> NMS IoU</td><td>confidence only</td></tr>
+          <tr><td><b>Latency</b></td><td>grows with the number of surviving boxes</td><td>constant</td></tr>
+          <tr><td><b>Data hunger</b></td><td>low: converges fast on small data</td><td>higher: needs more data and epochs</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Day 4 · Lab · Object detection with YOLO · lab by <b>Anas Aldadi</b></span>
+    <span><button class="linkbtn" id="reset">Reset this page</button></span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+
+  var $ = function (id) { return document.getElementById(id); };
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800); }
+  (function () {
+    var root = document.documentElement;
+    function syncTheme() {
+      var dark = root.getAttribute('data-theme') !== 'light';
+      $('ico-sun').style.display = dark ? '' : 'none';
+      $('ico-moon').style.display = dark ? 'none' : '';
+      $('theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+    }
+    $('theme').addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('ai256p-theme', next); } catch (e) {}
+      syncTheme();
+      window.dispatchEvent(new Event('layoutchange'));
+    });
+    function scale(d) {
+      var cur = parseFloat(getComputedStyle(root).getPropertyValue('--scale')) || 1;
+      var nx = Math.min(1.5, Math.max(0.85, Math.round((cur + d) * 100) / 100));
+      root.style.setProperty('--scale', nx);
+      try { localStorage.setItem('ai256p-scale', nx); } catch (e) {}
+      window.dispatchEvent(new Event('layoutchange'));
+    }
+    $('bigger').addEventListener('click', function () { scale(0.1); });
+    $('smaller').addEventListener('click', function () { scale(-0.1); });
+    syncTheme();
+  })();
+
+
+  var LEFT = [
+    { id: 'yolo', label: 'YOLO',              html: 'YOLO' },
+    { id: 'detr', label: 'DETR / RT-DETR',    html: 'DETR / RT-DETR' },
+    { id: 'bbox', label: 'Bounding box',      html: 'Bounding box' },
+    { id: 'iou',  label: 'IoU',               html: 'IoU' },
+    { id: 'nms',  label: 'NMS',               html: 'NMS' },
+    { id: 'map',  label: 'mAP',               html: 'mAP' },
+    { id: 'conf', label: 'Confidence score',  html: 'Confidence score' },
+    { id: 'hung', label: 'Hungarian matching',html: 'Hungarian matching' }
+  ];
+  var RIGHT = [
+    { id: 'd_nms',  label: 'keeps the top box, deletes overlapping ones', html: 'Post-processing that keeps the highest-scoring box and deletes the boxes that overlap it too much.' },
+    { id: 'd_yolo', label: 'one-stage grid detector',                     html: 'A one-stage detector: a grid of cells predicts boxes and classes in a single forward pass.' },
+    { id: 'd_map',  label: 'area under PR curve, averaged over classes',  html: 'The area under the precision–recall curve, averaged over all classes.' },
+    { id: 'd_bbox', label: 'rectangle, 4 numbers plus a class',           html: 'A rectangle marking where an object is, written as 4 numbers plus a class.' },
+    { id: 'd_hung', label: 'one-to-one pairing during training',          html: 'During training, pairs each prediction with at most one ground-truth box, so a duplicate is punished by the loss.' },
+    { id: 'd_iou',  label: 'overlap divided by combined area',            html: 'The area where two boxes overlap, divided by the total area they cover together.' },
+    { id: 'd_detr', label: 'transformer, fixed set of boxes, no NMS',     html: 'A transformer detector that predicts a fixed set of boxes and needs no NMS at inference.' },
+    { id: 'd_conf', label: 'objectness times class probability',          html: 'Objectness × class probability: the number on each box that you threshold.' }
+  ];
+  var ANSWER = { yolo: 'd_yolo', detr: 'd_detr', bbox: 'd_bbox', iou: 'd_iou', nms: 'd_nms', map: 'd_map', conf: 'd_conf', hung: 'd_hung' };
+  var HINT = 'Careful with the close cousins: <b>NMS</b> vs <b>Hungarian matching</b> (both fight duplicates, at different times), and <b>IoU</b> vs <b>mAP</b>.';
+
+  var pairs = {}, selected = null, result = null;
+  var board = $('mboard'), wires = $('wires');
+  var LBL = {}; LEFT.concat(RIGHT).forEach(function (x) { LBL[x.id] = x.label; });
+  var NLEFT = LEFT.length;
+  LEFT.forEach(function (x) {
+    var b = document.createElement('button');
+    b.className = 'm-item'; b.dataset.side = 'L'; b.dataset.id = x.id;
+    b.innerHTML = '<span class="txt"><span>' + x.html + '</span><span class="chip"></span></span><span class="dot"></span>';
+    $('left').appendChild(b);
+  });
+  RIGHT.forEach(function (x) {
+    var b = document.createElement('button');
+    b.className = 'm-item'; b.dataset.side = 'R'; b.dataset.id = x.id;
+    b.innerHTML = '<span class="dot"></span><span class="txt">' + x.html + '</span>';
+    $('right').appendChild(b);
+  });
+  function item(side, id) { return board.querySelector('.m-item[data-side="' + side + '"][data-id="' + id + '"]'); }
+  function link(a, b) {
+    var l = a.side === 'L' ? a.id : b.id, r = a.side === 'R' ? a.id : b.id;
+    Object.keys(pairs).forEach(function (k) { if (pairs[k] === r) delete pairs[k]; });
+    pairs[l] = r; selected = null; result = null; update();
+  }
+  function leftOf(r) { return Object.keys(pairs).filter(function (k) { return pairs[k] === r; })[0]; }
+  function update() {
+    Array.prototype.forEach.call(board.querySelectorAll('.m-item'), function (el) {
+      var side = el.dataset.side, id = el.dataset.id;
+      var l = side === 'L' ? id : leftOf(id);
+      el.classList.toggle('paired', side === 'L' ? !!pairs[id] : !!l);
+      el.classList.toggle('selected', !!selected && selected.side === side && selected.id === id);
+      var ok = result && l ? result[l] : null;
+      el.classList.toggle('right', ok === true);
+      el.classList.toggle('wrong', ok === false);
+      if (side === 'L') el.querySelector('.chip').textContent = pairs[id] ? 'matched' : 'unmatched';
+      el.setAttribute('aria-pressed', el.classList.contains('selected') ? 'true' : 'false');
+      el.setAttribute('aria-label', LBL[id] + (side === 'L' ? (pairs[id] ? ', matched to ' + LBL[pairs[id]] : ', unmatched') : (l ? ', matched to ' + LBL[l] : '')));
+    });
+    $('check').disabled = Object.keys(pairs).length < NLEFT;
+    if (!result) $('feedback').className = 'feedback';
+    drawWires();
+  }
+  function center(el) {
+    var d = el.querySelector('.dot').getBoundingClientRect(), b = board.getBoundingClientRect();
+    return { x: d.left + d.width / 2 - b.left, y: d.top + d.height / 2 - b.top };
+  }
+  function curve(p, q) {
+    var dx = Math.max(24, Math.abs(q.x - p.x) * 0.5);
+    return 'M' + p.x + ' ' + p.y + ' C' + (p.x + dx) + ' ' + p.y + ',' + (q.x - dx) + ' ' + q.y + ',' + q.x + ' ' + q.y;
+  }
+  var temp = null;
+  function drawWires() {
+    var s = '';
+    Object.keys(pairs).forEach(function (l) {
+      s += '<path class="' + (result ? (result[l] ? 'good' : 'bad') : '') + '" d="' + curve(center(item('L', l)), center(item('R', pairs[l]))) + '"/>';
+    });
+    if (temp) s += '<path class="temp" d="' + (temp.side === 'L' ? curve(temp.from, temp.to) : curve(temp.to, temp.from)) + '"/>';
+    wires.innerHTML = s;
+  }
+  var justDragged = false;
+  board.addEventListener('click', function (e) {
+    var el = e.target.closest('.m-item'); if (!el || justDragged) return;
+    var me = { side: el.dataset.side, id: el.dataset.id };
+    if (selected && selected.side !== me.side) { link(selected, me); return; }
+    selected = (selected && selected.id === me.id && selected.side === me.side) ? null : me;
+    update();
+  });
+  var drag = null;
+  board.addEventListener('pointerdown', function (e) {
+    var el = e.target.closest('.m-item'); if (!el) return;
+    if (!e.target.closest('.dot') && e.pointerType !== 'mouse') return;
+    drag = { el: el, side: el.dataset.side, id: el.dataset.id, x: e.clientX, y: e.clientY, moved: false, pid: e.pointerId };
+    if (e.target.closest('.dot')) e.preventDefault();
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 7) return;
+    drag.moved = true; e.preventDefault();
+    var b = board.getBoundingClientRect();
+    temp = { side: drag.side, from: center(drag.el), to: { x: e.clientX - b.left, y: e.clientY - b.top } };
+    drawWires();
+  });
+  window.addEventListener('pointerup', function (e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    if (drag.moved) {
+      var over = document.elementFromPoint(e.clientX, e.clientY);
+      var tgt = over && over.closest ? over.closest('.m-item') : null;
+      if (tgt && tgt.dataset.side !== drag.side) link({ side: drag.side, id: drag.id }, { side: tgt.dataset.side, id: tgt.dataset.id });
+      justDragged = true; setTimeout(function () { justDragged = false; }, 0);
+    }
+    temp = null; drag = null; drawWires();
+  });
+  window.addEventListener('pointercancel', function () { temp = null; drag = null; drawWires(); });
+  window.addEventListener('resize', drawWires);
+  window.addEventListener('layoutchange', function () { requestAnimationFrame(drawWires); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWires);
+  function check() {
+    result = {}; var right = 0;
+    LEFT.forEach(function (x) { result[x.id] = pairs[x.id] === ANSWER[x.id]; if (result[x.id]) right++; });
+    selected = null; update();
+    var fb = $('feedback');
+    if (right === NLEFT) {
+      fb.className = 'feedback show good';
+      fb.innerHTML = '<b>All ' + NLEFT + ' correct.</b> Scroll down for the debrief.';
+      $('debrief').classList.add('show'); $('show').hidden = true;
+      if (typeof onSolved === 'function') onSolved();
+    } else {
+      fb.className = 'feedback show bad';
+      fb.innerHTML = '<b>' + right + ' of ' + NLEFT + ' correct.</b> Red lines are wrong. ' + (typeof HINT === 'string' ? HINT : 'Change them and check again.');
+      $('show').hidden = false;
+    }
+  }
+  $('check').addEventListener('click', check);
+  $('show').addEventListener('click', function () {
+    pairs = JSON.parse(JSON.stringify(ANSWER)); check();
+    $('feedback').className = 'feedback show good';
+    $('feedback').innerHTML = '<b>Here are the correct matches.</b> The debrief below explains each one.';
+    $('debrief').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('reset').addEventListener('click', function () {
+    pairs = {}; selected = null; result = null; update();
+    $('show').hidden = true; $('debrief').classList.remove('show');
+    if (typeof onReset === 'function') onReset();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  update();
+
+})();
+</script>
+</body>
+</html>
