@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 1 Oral Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f4ef; --surface:#ffffff; --surface-2:#faf9f6; --ink:#1b1c1e; --muted:#676a70; --line:#e2dfd6;
+  --t1:#25734f; --t1-bg:#e3f1e9; --t2:#3557b7; --t2-bg:#e5ebfa; --t3:#9c5214; --t3-bg:#f8eadb;
+  --excellent:#1f7a4a; --good:#2a6fb0; --mid:#b07a0c; --weak:#b3362b;
+  --code-bg:#f1efe8; --accent:#1b1c1e; --accent-ink:#ffffff; --focus:#3557b7;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 14px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141517; --surface:#1d1f22; --surface-2:#191a1d; --ink:#ecebe6; --muted:#9a9ca1; --line:#2e3035;
+    --t1:#6fcf9d; --t1-bg:#1c3328; --t2:#8eaaf5; --t2-bg:#1f2840; --t3:#efa968; --t3-bg:#3a2717;
+    --excellent:#5fd093; --good:#6eaee8; --mid:#e8b74a; --weak:#f07a6f;
+    --code-bg:#24262a; --accent:#ecebe6; --accent-ink:#141517; --focus:#8eaaf5;
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141517; --surface:#1d1f22; --surface-2:#191a1d; --ink:#ecebe6; --muted:#9a9ca1; --line:#2e3035;
+  --t1:#6fcf9d; --t1-bg:#1c3328; --t2:#8eaaf5; --t2-bg:#1f2840; --t3:#efa968; --t3-bg:#3a2717;
+  --excellent:#5fd093; --good:#6eaee8; --mid:#e8b74a; --weak:#f07a6f;
+  --code-bg:#24262a; --accent:#ecebe6; --accent-ink:#141517; --focus:#8eaaf5;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+code,pre,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+.wrap{max-width:1180px;margin:0 auto;padding:28px 16px 80px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:28px;line-height:1.15;margin:4px 0 0;font-weight:700;letter-spacing:-.01em}
+.bankinfo{font-size:13px;color:var(--muted)}
+.bankinfo b{color:var(--ink);font-weight:600}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+
+/* setup */
+.setup{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center}
+.setup .grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.setup .lbl{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.count{display:flex;align-items:center;gap:6px;font-size:14px}
+.count input{width:46px;padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--ink);font:inherit;text-align:center}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.dot.t1{background:var(--t1)}.dot.t2{background:var(--t2)}.dot.t3{background:var(--t3)}
+.chip{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:3px 11px;font-size:13px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* cards */
+.cards{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--tc);border-radius:12px;padding:16px 18px 14px;box-shadow:var(--shadow)}
+.card.t1{--tc:var(--t1);--tbg:var(--t1-bg)}.card.t2{--tc:var(--t2);--tbg:var(--t2-bg)}.card.t3{--tc:var(--t3);--tbg:var(--t3-bg)}
+.card.rated{background:var(--surface-2)}
+.card-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.qn{font-weight:700;font-size:14px}
+.badge{background:var(--tbg);color:var(--tc);font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px}
+.task{font-size:13px;color:var(--muted)}
+.swap{margin-left:auto;background:none;border:1px solid var(--line);border-radius:7px;padding:3px 10px;font-size:13px;color:var(--muted)}
+.swap:hover{color:var(--ink);border-color:var(--muted)}
+.q{font-size:19px;line-height:1.45;margin:2px 0 10px;font-weight:500}
+.q code,.ans code{background:var(--code-bg);padding:1px 5px;border-radius:4px;font-size:.88em}
+pre.code{background:var(--code-bg);border-radius:8px;padding:12px 14px;margin:0 0 12px;overflow-x:auto;font-size:14px;line-height:1.55;white-space:pre}
+details{margin:0 0 12px}
+summary{font-size:13px;color:var(--muted);cursor:pointer;user-select:none;width:max-content}
+summary:hover{color:var(--ink)}
+.ans{margin-top:8px;font-size:14.5px;background:var(--tbg);border-radius:8px;padding:10px 12px;line-height:1.55}
+.rate{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rate .lbl{font-size:12px;color:var(--muted);margin-right:4px}
+.rbtn{width:40px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:15px}
+.rbtn:hover{border-color:var(--tc)}
+.rbtn[aria-pressed="true"]{background:var(--tc);border-color:var(--tc);color:#fff}
+:root[data-theme="dark"] .rbtn[aria-pressed="true"]{color:#141517}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rbtn[aria-pressed="true"]{color:#141517}}
+.rhint{font-size:12.5px;color:var(--muted);margin-left:6px;min-width:70px}
+
+/* panel */
+.panel{position:sticky;top:16px;display:flex;flex-direction:column;gap:14px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.box h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:600}
+.name{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);font:inherit;font-size:16px}
+.score{display:flex;align-items:baseline;gap:6px;margin:14px 0 2px}
+.score .big{font-size:52px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.score .of{font-size:18px;color:var(--muted)}
+.verdict{display:inline-block;font-weight:700;font-size:14px;padding:3px 11px;border-radius:999px;margin-top:6px;background:var(--surface-2);color:var(--muted)}
+.verdict.excellent{background:var(--excellent);color:#fff}.verdict.good{background:var(--good);color:#fff}
+.verdict.mid{background:var(--mid);color:#fff}.verdict.weak{background:var(--weak);color:#fff}
+.progress{font-size:13px;color:var(--muted);margin-top:8px}
+.scale{position:relative;height:8px;border-radius:4px;margin:16px 0 4px;background:linear-gradient(90deg,var(--weak) 0 50%,var(--mid) 50% 70%,var(--good) 70% 90%,var(--excellent) 90% 100%);opacity:.9}
+.marker{position:absolute;top:-5px;width:4px;height:18px;border-radius:2px;background:var(--ink);transform:translateX(-2px);transition:left .25s ease}
+.scale-lbl{position:relative;height:14px;font-size:11px;color:var(--muted)}
+.scale-lbl span{position:absolute;transform:translateX(-50%)}
+.scale-lbl span:first-child{transform:none}.scale-lbl span:last-child{transform:translateX(-100%)}
+.breakdown{font-size:13px;color:var(--muted);margin-top:12px;display:flex;flex-direction:column;gap:3px}
+.breakdown div{display:flex;justify-content:space-between}
+.breakdown b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.btns{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:9px 12px;font-weight:600;font-size:14px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.toast{font-size:12.5px;color:var(--excellent);min-height:18px;margin-top:4px}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+td.num{font-variant-numeric:tabular-nums;font-weight:600}
+.empty{font-size:13px;color:var(--muted)}
+.foot{font-size:12px;color:var(--muted);margin-top:8px}
+.theme{background:none;border:1px solid var(--line);border-radius:7px;padding:4px 10px;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="eyebrow">Applied Computer Vision · Day 1 Homework</div>
+      <h1>Image Preprocessing — Oral Check</h1>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div class="bankinfo" id="bankinfo"></div>
+      <button class="theme" id="themeBtn" title="Toggle light/dark">◐ Theme</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <main>
+      <div class="setup">
+        <div class="grp">
+          <span class="lbl">Questions</span>
+          <label class="count"><span class="dot t1"></span>Easy <input type="number" id="n1" min="0" max="10" value="3"></label>
+          <label class="count"><span class="dot t2"></span>Code <input type="number" id="n2" min="0" max="10" value="2"></label>
+          <label class="count"><span class="dot t3"></span>Use case <input type="number" id="n3" min="0" max="10" value="1"></label>
+        </div>
+        <div class="grp" id="parts">
+          <span class="lbl">Parts</span>
+        </div>
+      </div>
+      <div class="cards" id="cards"></div>
+    </main>
+
+    <aside class="panel">
+      <div class="box">
+        <h2>Student</h2>
+        <input class="name" id="name" placeholder="Name or ID (optional)" autocomplete="off">
+        <div class="score"><span class="big" id="big">–</span><span class="of">/ 10</span></div>
+        <span class="verdict" id="verdict">Not rated yet</span>
+        <div class="progress" id="progress"></div>
+        <div class="scale"><div class="marker" id="marker" style="left:0%;display:none"></div></div>
+        <div class="scale-lbl"><span style="left:0">0</span><span style="left:50%">5</span><span style="left:70%">7</span><span style="left:90%">9</span><span style="left:100%">10</span></div>
+        <div class="breakdown" id="breakdown"></div>
+        <div class="btns">
+          <button class="btn primary" id="nextBtn">Save &amp; next student</button>
+          <button class="btn" id="copyBtn">Copy result</button>
+          <button class="btn" id="redrawBtn">Redraw questions (no save)</button>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+
+      <div class="box">
+        <h2>This session</h2>
+        <div id="log"><div class="empty">Graded students appear here. Nothing is stored — refreshing the page clears this list.</div></div>
+        <div class="btns" id="logBtns" style="display:none">
+          <button class="btn" id="copyAllBtn">Copy all (paste into a spreadsheet)</button>
+        </div>
+      </div>
+      <div class="foot">Score = average rating ÷ 5 × 10. Bands: ≥ 9 Excellent · ≥ 7 Good · ≥ 5 Mid · below 5 Weak.</div>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* ===================== CONFIG ===================== */
+// Verdict bands on the /10 scale — edit freely.
+const BANDS = [
+  {min: 9, label: "Excellent", cls: "excellent"},
+  {min: 7, label: "Good",      cls: "good"},
+  {min: 5, label: "Mid",       cls: "mid"},
+  {min: 0, label: "Weak",      cls: "weak"}
+];
+const RATING_HINTS = ["No answer", "Wrong", "Weak", "Partial", "Good", "Excellent"];
+
+const TASKS = {
+  T1:  {part: 1, name: "Task 1 · Colour spaces"},
+  T2:  {part: 1, name: "Task 2 · Inventory"},
+  T3:  {part: 2, name: "Task 3 · Brightness, contrast & gamma"},
+  T4:  {part: 2, name: "Task 4 · Histogram & CDF"},
+  T5:  {part: 3, name: "Task 5 · Global equalization"},
+  T6:  {part: 3, name: "Task 6 · CLAHE & colour HE"},
+  T7:  {part: 4, name: "Task 7 · Adding noise"},
+  T8:  {part: 4, name: "Task 8 · Denoising & PSNR/SSIM"},
+  T9:  {part: 5, name: "Task 9 · Kernels & unsharp mask"},
+  T10: {part: 5, name: "Task 10 · Edge detection"},
+  T11: {part: 5, name: "Task 11 · Thresholding & morphology"},
+  T12: {part: 6, name: "Task 12 · Preprocessor pipeline"},
+  T13: {part: 6, name: "Task 13 · Kaggle upload"}
+};
+const PART_NAMES = {1:"1 Colour", 2:"2 Point ops", 3:"3 Equalization", 4:"4 Denoising", 5:"5 Filters", 6:"6 Pipeline"};
+const TYPES = {1: {label: "Easy", cls: "t1"}, 2: {label: "Code", cls: "t2"}, 3: {label: "Use case", cls: "t3"}};
+
+/* ===================== QUESTION BANK =====================
+   t: 1 = easy/general, 2 = explain the code, 3 = use case / why
+   q: question, c: code snippet (type 2), a: answer key.  `x` renders as inline code. */
+const BANK = [
+// ---------- TYPE 1: EASY ----------
+{t:1, task:"T1", q:"Why do we convert an image from BGR to RGB before displaying it with Matplotlib?", a:"OpenCV's `cv2.imread` loads channels in Blue-Green-Red order, while Matplotlib assumes Red-Green-Blue. Without converting, red and blue are swapped (a red object appears blue)."},
+{t:1, task:"T1", q:"What is the array shape of a grayscale image versus a colour image, and what is the usual pixel range?", a:"Grayscale is `H×W` (one intensity per pixel); colour is `H×W×3`. Pixels are usually `uint8` in the range 0–255."},
+{t:1, task:"T1", q:"In the HSV colour space, what do H, S and V represent, and why is V useful for preprocessing?", a:"Hue = the colour itself, Saturation = how pure/vivid it is, Value = brightness. V isolates brightness, so exposure/contrast tweaks can be done on one channel without changing colours."},
+{t:1, task:"T1", q:"What do we gain and what do we lose when we convert an image to grayscale?", a:"Gain: smaller data (1 channel instead of 3), faster processing, structure such as edges and texture is kept. Lose: all colour information."},
+{t:1, task:"T2", q:"Why do we build an inventory table of the dataset before preprocessing it?", a:"To catch problems early: mixed resolutions, unexpected dtypes, grayscale mixed with colour, unusual min/max values, or corrupt files that fail to load."},
+{t:1, task:"T2", q:"Name at least four properties you recorded for each image in the inventory.", a:"Any four of: path, group (folder), height, width, number of channels, dtype, min value, max value."},
+{t:1, task:"T3", q:"What is a point operation in image processing? Give one example from the homework.", a:"Each output pixel depends only on the same input pixel, through the same function `out = f(in)` — no neighbours involved. Examples: brightness/contrast `α·in + β`, gamma correction."},
+{t:1, task:"T3", q:"In the formula `out = α·in + β`, what does α control and what does β control?", a:"α scales the values → contrast. β shifts all values up/down → brightness."},
+{t:1, task:"T3", q:"What visible effect does gamma < 1 have, compared to gamma > 1?", a:"γ < 1 brightens the image, lifting the shadows/dark tones the most. γ > 1 darkens the image, deepening shadows. γ = 1 leaves it unchanged."},
+{t:1, task:"T4", q:"What does an image histogram show?", a:"For each intensity value (0–255), how many pixels in the image have that value. It describes the brightness distribution, not where the pixels are."},
+{t:1, task:"T4", q:"Looking at a histogram, how can you tell an image is dark, or low-contrast?", a:"Dark/underexposed: the mass is bunched to the left. Low contrast: the values are squeezed into a narrow band. Good contrast spreads across the full range."},
+{t:1, task:"T4", q:"What is the CDF of a histogram, and why does it matter for this homework?", a:"The cumulative distribution: the running sum of the histogram, normalised so it ends at 1. Histogram equalization uses the CDF directly as the mapping from old intensity to new intensity."},
+{t:1, task:"T5", q:"What does histogram equalization do to the histogram of an image?", a:"It spreads (stretches and flattens) a bunched-up histogram across the full 0–255 range, which increases contrast."},
+{t:1, task:"T5", q:"What number did we use as a simple contrast measure in Task 5, and roughly how did it change on the moon image?", a:"The standard deviation of pixel intensities. For moon it jumps from about 13 to about 74 after global equalization."},
+{t:1, task:"T5", q:"Name one downside of global histogram equalization.", a:"It can over-amplify contrast and blow out regions that were already fine, and it amplifies noise. One global mapping can't suit areas with different lighting."},
+{t:1, task:"T6", q:"What does CLAHE stand for, and how is it different from global equalization in one sentence?", a:"Contrast-Limited Adaptive Histogram Equalization. It equalizes small tiles separately and clips the contrast gain in each tile, so it boosts local detail without the harsh over-amplification of global HE."},
+{t:1, task:"T6", q:"Why should we equalize the Y (or L) channel of a colour image instead of R, G and B separately?", a:"Equalizing R, G, B independently changes the ratios between channels, so colours drift (odd skin tones, strange skies). Y/L hold only brightness, so equalizing them changes contrast but keeps colours."},
+{t:1, task:"T7", q:"Describe how Gaussian noise and salt-and-pepper noise look different on an image.", a:"Gaussian: a fine grain over every pixel (small random ± offsets). Salt-and-pepper: isolated pixels that are pure white or pure black, like sprinkled specks; the rest of the image is untouched."},
+{t:1, task:"T7", q:"Why do we add noise to clean images ourselves instead of using real noisy photos?", a:"Because we keep the clean original as ground truth, so we can measure exactly how well each denoiser restores it with PSNR/SSIM."},
+{t:1, task:"T7", q:"Give a real-world cause of Gaussian noise and of salt-and-pepper noise.", a:"Gaussian: sensor/thermal noise, low light with high ISO. Salt-and-pepper: dead or stuck pixels, bit errors in transmission, faulty memory."},
+{t:1, task:"T8", q:"What do PSNR and SSIM measure? For each, is higher better?", a:"PSNR (in dB) measures pixel-level error against the clean reference. SSIM measures structural similarity (luminance, contrast, structure), 1.0 = identical. Higher is better for both."},
+{t:1, task:"T8", q:"Which denoiser won on salt-and-pepper noise, and roughly what PSNR improvement did it give?", a:"The median filter: roughly 18 dB → about 31 dB, while box and Gaussian blur barely moved."},
+{t:1, task:"T8", q:"Name the five denoising filters compared in Task 8.", a:"Box (mean), Gaussian, median, bilateral, non-local means (NLM)."},
+{t:1, task:"T9", q:"What is a convolution kernel?", a:"A small matrix of weights that slides over the image; each output pixel is the weighted sum of its neighbourhood. The weights decide the effect (blur, sharpen, edges)."},
+{t:1, task:"T9", q:"Why should the weights of a blur (averaging) kernel sum to 1?", a:"So the overall brightness is preserved. If they summed to more than 1 the image would brighten; less than 1 would darken it."},
+{t:1, task:"T9", q:"What is unsharp masking, in words?", a:"Blur the image, subtract the blurred version from the original to get the detail/edges, then add a fraction of that detail back: `image + amount·(image − blurred)`."},
+{t:1, task:"T10", q:"Name the three edge detectors used in Task 10.", a:"Sobel, Laplacian, Canny."},
+{t:1, task:"T10", q:"How does the output of Canny look different from the output of Sobel?", a:"Canny gives clean, thin, binary (on/off) edge lines. Sobel gives a continuous gradient magnitude: thicker, grey-level edges showing edge strength."},
+{t:1, task:"T11", q:"What does Otsu's method decide automatically?", a:"The threshold value. It picks the cutoff from the histogram that best separates two classes (minimises within-class variance)."},
+{t:1, task:"T11", q:"What does a morphological opening remove, and what does a closing fill?", a:"Opening (erode then dilate) removes small specks/noise. Closing (dilate then erode) fills small holes and gaps inside objects."},
+{t:1, task:"T11", q:"When is adaptive thresholding better than a single global threshold?", a:"When lighting is uneven across the image: adaptive computes a separate threshold for each local region."},
+{t:1, task:"T12", q:"Why must the Preprocessor be deterministic (no randomness)?", a:"So training and inference see exactly the same pixel transformation. Any difference creates train/serve skew and hurts accuracy. Randomness belongs to augmentation, which is training only."},
+{t:1, task:"T12", q:"List the steps of the Preprocessor pipeline in order.", a:"read → BGR→RGB → (optional) denoise → (optional) CLAHE on luminance → (optional) grayscale → resize → float in [0,1] → (optional) normalize with mean/std."},
+{t:1, task:"T13", q:"Why upload the preprocessed data to Kaggle?", a:"To keep a versioned copy you can reuse in later days/notebooks without redoing the preprocessing, and to share it with others."},
+{t:1, task:"T13", q:"Which file must be in the data folder before running `kaggle datasets create`, and what does it contain?", a:"`dataset-metadata.json` — the title, the id (`username/dataset-slug`) and the licence."},
+
+// ---------- TYPE 2: CODE ----------
+{t:2, task:"T1", q:"What does this line return, and what happens if the path is wrong?", c:"bgr = cv2.imread(RAW_DIR + '/color/' + FOCUS_COLOR + '.png')", a:"A NumPy `uint8` array of shape H×W×3 in BGR order. If the file is missing or unreadable, `cv2.imread` silently returns `None` (no exception) — the error only appears later when you use it."},
+{t:2, task:"T1", q:"Explain what `hsv[..., 2]` selects.", c:"hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)\nvalue = hsv[..., 2]", a:"`...` (Ellipsis) means 'all leading dimensions' (rows and columns). Index 2 on the last axis is the V (Value/brightness) channel, giving an H×W image. Bonus: in OpenCV, H is stored in 0–179 for uint8."},
+{t:2, task:"T2", q:"What does this line compute? Bonus: what value will it give for the gray PNGs in data/raw, and why?", c:"ch = 1 if img.ndim == 2 else img.shape[2]", a:"Number of channels: a 2-D array is grayscale (1), otherwise read the third dimension. Bonus: `cv2.imread` without flags always loads 3 channels, so even the gray PNGs report 3. To see the true count you'd use `cv2.IMREAD_UNCHANGED`."},
+{t:2, task:"T2", q:"What does this produce, and why is it useful?", c:"inv.groupby(['height', 'width']).size()", a:"Groups the inventory rows by resolution and counts images in each group. It immediately reveals mixed image sizes in the dataset."},
+{t:2, task:"T3", q:"What does `convertScaleAbs` do, and why not just write `img * alpha + beta` in NumPy?", c:"cv2.convertScaleAbs(img, alpha=alpha, beta=beta)", a:"Computes `|α·img + β|`, then saturates to [0,255] and converts to uint8. With plain uint8 NumPy arithmetic, values overflow and wrap around (e.g. 250 + 10 → 4), producing artefacts."},
+{t:2, task:"T3", q:"Walk through this block. Why is a lookup table (LUT) used?", c:"table = ((np.arange(256) / 255.0) ** gamma * 255).astype('uint8')\nout = cv2.LUT(img, table)", a:"Builds a 256-entry table: each possible intensity is normalised to [0,1], raised to γ, and scaled back to 0–255. `cv2.LUT` replaces every pixel by `table[pixel]`. The expensive power is computed only 256 times, not once per pixel, so it's fast."},
+{t:2, task:"T4", q:"Explain each argument of this call and the `.ravel()`.", c:"hist = cv2.calcHist([gray], [0], None, [256], [0, 256]).ravel()", a:"`[gray]` list of images; `[0]` channel index; `None` no mask (whole image); `[256]` number of bins; `[0, 256]` value range (upper bound exclusive). It returns shape (256,1); `.ravel()` flattens it to (256,)."},
+{t:2, task:"T4", q:"What does each line do, and what is the last value of `cdf`?", c:"cdf = hist.cumsum()\ncdf = cdf / cdf[-1]", a:"`cumsum` gives the running total of pixel counts; the last element equals the total number of pixels. Dividing by it normalises the CDF to [0,1], so the last value is exactly 1.0."},
+{t:2, task:"T5", q:"What does this line do internally?", c:"eq = cv2.equalizeHist(gray)", a:"Computes the histogram and its CDF, then maps every pixel through the scaled CDF (≈ 255·CDF(value)). Works on single-channel 8-bit images only."},
+{t:2, task:"T6", q:"What do `clipLimit` and `tileGridSize` control?", c:"clahe = cv2.createCLAHE(clipLimit=CLAHE_CLIP, tileGridSize=(8, 8))\nclahe_img = clahe.apply(gray)", a:"`tileGridSize=(8,8)`: the image is split into an 8×8 grid of tiles, each equalized locally (and blended at the borders). `clipLimit`: caps each tile's histogram counts before equalizing, limiting contrast gain. Higher clip → stronger contrast but more noise amplification."},
+{t:2, task:"T6", q:"Explain this function line by line. Why index 0?", c:"ycc = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2YCrCb)\nycc[..., 0] = cv2.equalizeHist(ycc[..., 0])\nreturn cv2.cvtColor(ycc, cv2.COLOR_YCrCb2RGB)", a:"Convert to YCrCb, equalize only channel 0 (Y = luminance), leave Cr/Cb (colour) untouched, convert back to RGB. Index 0 because Y is the first channel in YCrCb."},
+{t:2, task:"T6", q:"What does this do, and why does it shift the colours?", c:"r, g, b = cv2.split(rgb_img)\nr2, g2, b2 = cv2.equalizeHist(r), cv2.equalizeHist(g), cv2.equalizeHist(b)\nout = cv2.merge([r2, g2, b2])", a:"Equalizes each channel with its own CDF, then stacks them back. Each channel receives a different mapping, so the R:G:B ratios of every pixel change — which is a change of hue/colour, not just of contrast."},
+{t:2, task:"T7", q:"Why does the homework create the random generator with a seed?", c:"rng = np.random.default_rng(SEED)", a:"Reproducibility: the same noise is generated on every run and for every student, so PSNR/SSIM numbers are comparable and results can be repeated."},
+{t:2, task:"T7", q:"Why convert to float and clip before casting back to uint8?", c:"noise = rng.normal(0, sigma, img.shape)\nout = np.clip(img.astype(np.float32) + noise, 0, 255).astype(np.uint8)", a:"Noise has negative and fractional values. In uint8, out-of-range values wrap around (−5 → 251, 260 → 4), creating fake salt/pepper. Working in float and clipping to [0,255] avoids this; only then cast back."},
+{t:2, task:"T7", q:"Why the `* 0.5`? Bonus: is the noisy fraction exactly `amount`?", c:"k = int(amount * img.shape[0] * img.shape[1] * 0.5)\nys = rng.integers(0, img.shape[0], k); xs = rng.integers(0, img.shape[1], k)\nout[ys, xs] = 255", a:"Half of the affected pixels become salt (255) and half pepper (0), so together they total `amount`. Bonus: slightly less — random coordinates can repeat, and a pepper pixel can overwrite a salt one. For a colour image, `out[ys, xs] = 255` sets all 3 channels."},
+{t:2, task:"T8", q:"What does the `3` mean, and why must it be odd?", c:"cv2.medianBlur(noisy, 3)", a:"A 3×3 window: each pixel is replaced by the median of its 9 neighbours. Must be odd so the window has a centre pixel."},
+{t:2, task:"T8", q:"Explain the three numbers in this call.", c:"cv2.bilateralFilter(noisy, 9, 75, 75)", a:"9 = neighbourhood diameter. First 75 = sigmaColor: how different two intensities can be and still be averaged together (this is what preserves edges). Second 75 = sigmaSpace: how far away pixels still contribute."},
+{t:2, task:"T8", q:"Explain the parameters 15, 7 and 21. What happens if you increase the 15?", c:"cv2.fastNlMeansDenoising(noisy, None, 15, 7, 21)", a:"h = 15: filter strength. 7: template (patch) size compared. 21: search window in which similar patches are looked for. Larger h removes more noise but also erases fine detail (over-smoothing)."},
+{t:2, task:"T8", q:"What does `sigma = 0` mean in this call?", c:"cv2.GaussianBlur(noisy, (5, 5), 0)", a:"A 5×5 Gaussian kernel; sigma 0 tells OpenCV to compute sigma automatically from the kernel size."},
+{t:2, task:"T8", q:"Why is `channel_axis=-1` needed for colour images?", c:"s = ssim(clean, test) if clean.ndim == 2 else ssim(clean, test, channel_axis=-1)", a:"It tells scikit-image the last axis holds colour channels, so SSIM is computed per channel and averaged. Without it, the H×W×3 array is treated as a 3-D volume, which is wrong (or raises an error for small windows)."},
+{t:2, task:"T9", q:"Why is the centre weight 5? What does the kernel sum to?", c:"sharp_kernel = np.array([[0, -1, 0],\n                         [-1, 5, -1],\n                         [0, -1, 0]])", a:"It sums to 1 (5 − 4), so overall brightness is preserved. It equals the identity plus a negative Laplacian: the pixel minus its neighbours is added back, which boosts local contrast at edges."},
+{t:2, task:"T9", q:"What does the `-1` argument mean here?", c:"cv2.filter2D(img, -1, kernel)", a:"The output depth (dtype) is the same as the input (e.g. uint8 in → uint8 out)."},
+{t:2, task:"T9", q:"Show why this is the same as an unsharp mask with amount 0.5.", c:"blur = cv2.GaussianBlur(image, (0, 0), sigma)\nout = cv2.addWeighted(image, 1.5, blur, -0.5, 0)", a:"`image + 0.5·(image − blur) = 1.5·image − 0.5·blur`, which is exactly what `addWeighted` computes (with gamma 0). `(0,0)` lets OpenCV compute the kernel size from sigma."},
+{t:2, task:"T10", q:"Why `cv2.CV_64F` rather than uint8? Which edges does `1, 0` detect?", c:"gx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)", a:"Gradients can be negative (bright→dark). In uint8 they'd be clipped to 0 and half the edges lost. `dx=1, dy=0` is the derivative along x, which responds to vertical edges."},
+{t:2, task:"T10", q:"What does `cv2.magnitude` compute, and why scale before display?", c:"mag = cv2.magnitude(gx, gy)\nmag = np.uint8(255 * mag / mag.max())", a:"Per-pixel `sqrt(gx² + gy²)` — edge strength in any direction. The float values exceed 255, so they're rescaled to 0–255 uint8 for display."},
+{t:2, task:"T10", q:"Explain the two thresholds 100 and 200.", c:"cv2.Canny(gray, 100, 200)", a:"Hysteresis: gradients above 200 are strong edges (kept); below 100 are discarded; between 100 and 200 are kept only if connected to a strong edge. This keeps continuous edges and drops isolated noise."},
+{t:2, task:"T11", q:"Why is the threshold argument 0, and what is the `_`?", c:"_, otsu = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)", a:"With `THRESH_OTSU`, the given threshold is ignored — Otsu computes it. The first return value (assigned to `_`) is the threshold Otsu chose; the second is the binary mask (0/255)."},
+{t:2, task:"T11", q:"What do 11 and 2 mean in this call?", c:"cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\n                      cv2.THRESH_BINARY, 11, 2)", a:"11 = block size: the threshold for each pixel is computed from its 11×11 neighbourhood (Gaussian-weighted mean). 2 = constant subtracted from that mean. Max value 255 is assigned to pixels above."},
+{t:2, task:"T11", q:"Explain this block. What would change if you did close first, then open?", c:"k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))\nopened  = cv2.morphologyEx(otsu, cv2.MORPH_OPEN, k)\ncleaned = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, k)", a:"A 3×3 elliptical structuring element; open removes small white specks, then close fills small holes in objects. Order matters: closing first could merge specks into nearby objects before they get removed."},
+{t:2, task:"T12", q:"Why are the size values swapped, and why `INTER_AREA`?", c:"cv2.resize(img, (self.size[1], self.size[0]), interpolation=cv2.INTER_AREA)", a:"`self.size` is (height, width) but `cv2.resize` expects (width, height). `INTER_AREA` averages pixel areas, which is the best choice for shrinking (avoids aliasing/moiré)."},
+{t:2, task:"T12", q:"What does `[..., None]` do here, and why keep it?", c:"img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)[..., None]", a:"Adds a channel axis: H×W → H×W×1. Keeps every output shaped H×W×C, so later steps (normalisation, stacking into batches, models expecting a channel dim) work the same for gray and colour."},
+{t:2, task:"T12", q:"Explain this normalisation. Bonus: what goes wrong if `to_gray=True` but MEAN has 3 values?", c:"x = img.astype(np.float32) / 255.0\nif self.mean is not None:\n    x = (x - self.mean) / self.std", a:"Scale to [0,1] first (ImageNet stats are on the 0–1 scale), then subtract mean and divide by std per channel via broadcasting on the last axis. Bonus: H×W×1 broadcasts with shape (3,) into H×W×3 — the gray image silently becomes 3 channels."},
+{t:2, task:"T12", q:"What does this line allow, and what hidden assumption does it make about arrays?", c:"img = cv2.imread(path_or_img) if isinstance(path_or_img, str) else path_or_img", a:"The Preprocessor accepts either a file path or an already-loaded array. Hidden assumption: a passed array is BGR, because `_read` then converts BGR→RGB. Passing an RGB array would swap red and blue."},
+{t:2, task:"T13", q:"What is the `id` field, and why does it use this format?", c:"metadata = {\n    'title': DATASET_TITLE,\n    'id': f\"{os.environ.get('KAGGLE_USERNAME')}/{DATASET_SLUG}\",\n    'licenses': [{'name': 'CC0-1.0'}]\n}", a:"Kaggle identifies a dataset as `owner/slug` (like a URL path). The f-string builds it from the username env var and the slug. The licence CC0-1.0 means public domain."},
+{t:2, task:"T13", q:"When do you use each of these commands?", c:"!kaggle datasets create -p data --private\n!kaggle datasets version -p data -m 'Upload preprocessed data for Day 2'", a:"`create` the first time to make a new dataset from folder `data` (here private). `version` afterwards to upload a new version of an existing dataset, with a change message."},
+
+// ---------- TYPE 3: USE CASE ----------
+{t:3, task:"T6", q:"You're preprocessing chest X-rays that have very dark and very bright regions in the same image. Global HE or CLAHE — and why?", a:"CLAHE. It enhances local detail tile by tile and its clip limit prevents blowing out regions and over-amplifying noise. Global HE uses one mapping for the whole image and would wash out already bright/dark areas. CLAHE is standard in medical imaging."},
+{t:3, task:"T8", q:"A scanner produces images with random isolated white and black dots. Which filter would you use and why not a Gaussian blur?", a:"Median filter: impulse noise is an outlier, and the median simply ignores outliers while keeping edges sharp. A Gaussian/box blur averages the speck into its neighbours, leaving a grey smudge and blurring edges."},
+{t:3, task:"T8", q:"Grainy low-light CCTV frames need cleaning before a detector runs in real time. Which denoiser would you pick, and what's the trade-off?", a:"For Gaussian-like grain, NLM gives the best quality but is the slowest — often too slow for real time. Bilateral (edge-preserving, moderately fast) or a light Gaussian blur are practical choices. Trade-off: quality vs speed."},
+{t:3, task:"T6", q:"You want to boost contrast in hazy drone photos of crops where the green colour matters for the model. How do you do it?", a:"Convert to LAB or YCrCb, apply CLAHE (or HE) to the L/Y channel only, convert back. Contrast improves while the crop colours stay correct. Per-RGB equalization would shift the greens."},
+{t:3, task:"T11", q:"You need to count coins or cells on a fairly uniform background. What sequence of operations would you use?", a:"Grayscale → (light blur) → Otsu threshold to get a binary mask → morphological open to remove specks → close to fill holes → count connected components/contours."},
+{t:3, task:"T11", q:"You photograph a printed page with a phone and one corner is in shadow. Otsu or adaptive thresholding — why?", a:"Adaptive. One global threshold either loses text in the shadow or turns the bright area black. Adaptive computes a local threshold per neighbourhood, so it handles uneven lighting."},
+{t:3, task:"T12", q:"You trained a model with CLAHE + resize, but the app team skipped CLAHE in production and accuracy dropped. What happened, and how do you prevent it?", a:"Train/serve skew: the model sees a different pixel distribution at inference. Prevention: package one deterministic Preprocessor (e.g. `src/preprocess.py`) used by both training and inference."},
+{t:3, task:"T12", q:"A teammate wants to add random brightness changes inside the Preprocessor so the model gets more robust. Good idea?", a:"Not inside the deterministic Preprocessor — it's also used at inference, where outputs must be repeatable. Random brightness is augmentation and belongs in a separate training-only transform."},
+{t:3, task:"T10", q:"For lane detection in a driving video, which preprocessing and edge steps would you use?", a:"Grayscale → Gaussian blur to suppress noise → Canny for thin, clean edges (then e.g. a Hough transform for lines). Blur first, because edge detectors amplify noise."},
+{t:3, task:"T1", q:"When would converting to grayscale be a good preprocessing choice, and when would it hurt the model?", a:"Good when the task depends on shape/texture: digits, documents, X-rays, defects. Hurts when colour carries the information: ripeness of fruit, traffic lights, skin lesions, plant disease."},
+{t:3, task:"T9", q:"Product photos are slightly soft/blurry. Would you sharpen them? What should you watch out for?", a:"Yes, an unsharp mask improves perceived sharpness. Watch out: sharpening amplifies noise and creates halos around edges, so denoise first and keep the amount moderate."},
+{t:3, task:"T8", q:"In a thermal camera used for defect detection, edges matter a lot and the noise is Gaussian. Why might Gaussian blur be the wrong choice?", a:"Gaussian blur smooths edges together with the noise, so small defects can disappear. Bilateral or NLM remove Gaussian noise while preserving edges."},
+{t:3, task:"T5", q:"Give a situation where histogram equalization would actually hurt a model.", a:"When absolute brightness is meaningful: day vs night classification, exposure-quality grading. Also on already well-exposed images, or noisy images, where HE amplifies the noise."},
+{t:3, task:"T8", q:"You inspect metal surfaces for very thin scratches. Would you put a median filter in the pipeline?", a:"Be careful: a median filter removes thin, one-or-two-pixel features because they look like impulse outliers — it might erase the scratches you want to find. Prefer milder or edge-preserving denoising and verify on examples."},
+{t:3, task:"T13", q:"Why share a cleaned dataset through Kaggle (or another versioned store) instead of emailing a zip?", a:"Versioning (you know which data a model used), reproducibility, direct access from notebooks/Kaggle kernels, no re-running preprocessing, easy sharing and updating."},
+{t:3, task:"T12", q:"You need to shrink 4000×3000 photos to 128×128, and in another project enlarge 64×64 icons. Which interpolation for each?", a:"Shrinking: `INTER_AREA` (averages pixels, avoids aliasing). Enlarging: `INTER_LINEAR` or `INTER_CUBIC` (smoother). Also watch the aspect ratio — 4:3 squashed to 1:1 distorts shapes; consider crop or pad."},
+{t:3, task:"T11", q:"Microscopy images get darker towards the corners because of uneven illumination. How would you segment the cells?", a:"Correct or compensate for lighting: CLAHE, or background subtraction, then adaptive thresholding instead of a single global Otsu threshold; finish with open/close."},
+{t:3, task:"T8", q:"A colleague says their new denoiser 'looks much better'. How do you check that claim objectively?", a:"Add known noise to clean images and compare PSNR/SSIM against the clean ground truth, versus the noisy baseline and other filters. 'Looks nice' isn't enough — a smoothed image can look nice and still lose detail/PSNR."},
+{t:3, task:"T3", q:"A dataset has underexposed photos from cheap cameras with mostly dark tones. Linear brightness boost or gamma correction — why?", a:"Gamma < 1: it lifts the shadows non-linearly while barely changing the highlights. Adding a constant brightness (β) shifts everything, clipping bright areas to white and reducing contrast."},
+{t:3, task:"T10", q:"You want to feed edge information to a CNN as an extra input channel. Sobel magnitude or Canny — why?", a:"Usually Sobel magnitude: it keeps continuous edge strength, which is richer information for a network. Canny gives binary thin edges — better for geometric steps (contours, Hough lines) but throws away strength and depends on thresholds."},
+{t:3, task:"T7", q:"Why might adding synthetic noise to training images be useful beyond testing denoisers?", a:"As augmentation: training on noisy versions makes the model robust to real sensor noise at deployment. (This goes in the random training-only transform, not in the deterministic Preprocessor.)"}
+];
+
+/* ===================== STATE ===================== */
+const used = {1: new Set(), 2: new Set(), 3: new Set()};
+const activeParts = new Set([1, 2, 3, 4, 5, 6]);
+let current = [];    // [{idx, rating:null}]
+let log = [];        // session only (not saved)
+const $ = id => document.getElementById(id);
+
+/* ===================== HELPERS ===================== */
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function fmt(s){ return esc(s).replace(/`([^`]+)`/g, "<code>$1</code>"); }
+function counts(){ return {1: +$("n1").value || 0, 2: +$("n2").value || 0, 3: +$("n3").value || 0}; }
+function pool(type){
+  return BANK.map((q, i) => i).filter(i => BANK[i].t === type && activeParts.has(TASKS[BANK[i].task].part));
+}
+function pick(type, takenIdx){
+  const taken = new Set(takenIdx);
+  const takenTasks = new Set(takenIdx.map(i => BANK[i].task));
+  const base = pool(type).filter(i => !taken.has(i));
+  if (!base.length) return null;
+  let fresh = base.filter(i => !used[type].has(i));
+  if (!fresh.length){ used[type].clear(); fresh = base; }      // pool exhausted → recycle
+  const varied = fresh.filter(i => !takenTasks.has(BANK[i].task)); // prefer different tasks
+  const cands = varied.length ? varied : fresh;
+  const i = cands[Math.floor(Math.random() * cands.length)];
+  used[type].add(i);
+  return i;
+}
+function band(score){ return BANDS.find(b => score >= b.min) || BANDS[BANDS.length - 1]; }
+function round1(x){ return Math.round(x * 10) / 10; }
+function stats(){
+  const rated = current.filter(c => c.rating !== null);
+  const sum = rated.reduce((s, c) => s + c.rating, 0);
+  const score = rated.length ? round1(sum / rated.length / 5 * 10) : null;
+  return {rated: rated.length, total: current.length, sum, score, complete: current.length > 0 && rated.length === current.length};
+}
+
+/* ===================== DRAW & RENDER ===================== */
+function draw(){
+  current = [];
+  const n = counts();
+  for (const t of [1, 2, 3]){
+    for (let k = 0; k < n[t]; k++){
+      const i = pick(t, current.map(c => c.idx));
+      if (i !== null) current.push({idx: i, rating: null});
+    }
+  }
+  render();
+}
+function swap(pos){
+  const t = BANK[current[pos].idx].t;
+  const others = current.map(c => c.idx);
+  const i = pick(t, others);
+  if (i !== null){ current[pos] = {idx: i, rating: null}; render(); }
+}
+function render(){
+  const box = $("cards");
+  box.innerHTML = "";
+  if (!current.length){
+    box.innerHTML = '<div class="card"><p class="q">No questions — set at least one count above 0.</p></div>';
+  }
+  current.forEach((c, pos) => {
+    const q = BANK[c.idx], ty = TYPES[q.t];
+    const el = document.createElement("article");
+    el.className = "card " + ty.cls + (c.rating !== null ? " rated" : "");
+    el.innerHTML =
+      '<div class="card-h"><span class="qn">Q' + (pos + 1) + '</span>' +
+      '<span class="badge">' + ty.label + '</span>' +
+      '<span class="task">' + esc(TASKS[q.task].name) + '</span>' +
+      '<button class="swap" title="Replace with another question of the same type">↻ Swap</button></div>' +
+      '<p class="q">' + fmt(q.q) + '</p>' +
+      (q.c ? '<pre class="code">' + esc(q.c) + '</pre>' : '') +
+      '<details><summary>Answer key</summary><div class="ans">' + fmt(q.a) + '</div></details>' +
+      '<div class="rate"><span class="lbl">Rate</span>' +
+      [0,1,2,3,4,5].map(r => '<button class="rbtn" data-r="' + r + '" aria-pressed="' + (c.rating === r) + '" title="' + RATING_HINTS[r] + '">' + r + '</button>').join("") +
+      '<span class="rhint">' + (c.rating !== null ? RATING_HINTS[c.rating] : "") + '</span></div>';
+    el.querySelector(".swap").onclick = () => swap(pos);
+    el.querySelectorAll(".rbtn").forEach(b => b.onclick = () => {
+      const r = +b.dataset.r;
+      current[pos].rating = (current[pos].rating === r) ? null : r;  // click again to clear
+      render();
+    });
+    box.appendChild(el);
+  });
+  renderScore();
+  renderBankInfo();
+}
+function renderScore(){
+  const s = stats();
+  $("big").textContent = s.score === null ? "–" : s.score.toFixed(1);
+  const v = $("verdict");
+  if (s.score === null){ v.className = "verdict"; v.textContent = "Not rated yet"; }
+  else { const b = band(s.score); v.className = "verdict " + b.cls; v.textContent = b.label + (s.complete ? "" : " (so far)"); }
+  $("progress").textContent = s.rated + " of " + s.total + " rated" + (s.rated ? " · " + s.sum + " / " + (s.rated * 5) + " points" : "");
+  const m = $("marker");
+  if (s.score === null) m.style.display = "none"; else { m.style.display = "block"; m.style.left = (s.score * 10) + "%"; }
+  // per-type breakdown
+  const bd = [1, 2, 3].map(t => {
+    const items = current.filter(c => BANK[c.idx].t === t);
+    if (!items.length) return "";
+    const r = items.filter(c => c.rating !== null);
+    const val = r.length ? r.reduce((a, c) => a + c.rating, 0) + " / " + (items.length * 5) : "–";
+    return '<div><span><span class="dot ' + TYPES[t].cls + '"></span> ' + TYPES[t].label + '</span><b>' + val + '</b></div>';
+  }).join("");
+  $("breakdown").innerHTML = bd;
+  const nb = $("nextBtn");
+  nb.disabled = !s.complete;
+  nb.textContent = s.complete ? "Save & next student" : "Rate all questions to save";
+}
+function renderBankInfo(){
+  const tot = t => pool(t).length;
+  $("bankinfo").innerHTML = "Bank: <b>" + tot(1) + "</b> easy · <b>" + tot(2) + "</b> code · <b>" + tot(3) + "</b> use-case";
+}
+function renderParts(){
+  const g = $("parts");
+  g.querySelectorAll(".chip").forEach(x => x.remove());
+  Object.keys(PART_NAMES).forEach(p => {
+    p = +p;
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = PART_NAMES[p];
+    b.setAttribute("aria-pressed", activeParts.has(p));
+    b.onclick = () => {
+      if (activeParts.has(p)){ if (activeParts.size === 1) return; activeParts.delete(p); }
+      else activeParts.add(p);
+      renderParts(); draw();
+    };
+    g.appendChild(b);
+  });
+}
+function studentName(){ return $("name").value.trim() || ("Student " + (log.length + 1)); }
+function resultLine(){
+  const s = stats();
+  const b = s.score === null ? "—" : band(s.score).label;
+  const per = current.map((c, i) => "Q" + (i + 1) + "(" + TYPES[BANK[c.idx].t].label + ")=" + (c.rating === null ? "-" : c.rating)).join(", ");
+  return studentName() + " — " + (s.score === null ? "-" : s.score.toFixed(1)) + "/10 (" + b + ") — " + per;
+}
+function toast(msg){ $("toast").textContent = msg; clearTimeout(toast._t); toast._t = setTimeout(() => $("toast").textContent = "", 2200); }
+function copy(text){
+  const done = () => toast("Copied to clipboard");
+  if (navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(done, () => fallback());
+  } else fallback();
+  function fallback(){
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch(e) { toast("Copy failed — select manually"); }
+    ta.remove();
+  }
+}
+function renderLog(){
+  if (!log.length){ $("logBtns").style.display = "none"; return; }
+  $("logBtns").style.display = "flex";
+  const avg = round1(log.reduce((a, r) => a + r.score, 0) / log.length);
+  $("log").innerHTML = '<table><thead><tr><th>Student</th><th>Score</th><th>Band</th></tr></thead><tbody>' +
+    log.map(r => '<tr><td>' + esc(r.name) + '</td><td class="num">' + r.score.toFixed(1) + '</td><td>' + r.band + '</td></tr>').join("") +
+    '</tbody></table><div class="foot">' + log.length + ' graded · class average ' + avg.toFixed(1) + ' / 10</div>';
+}
+
+/* ===================== EVENTS ===================== */
+$("nextBtn").onclick = () => {
+  const s = stats(); if (!s.complete) return;
+  log.push({name: studentName(), score: s.score, band: band(s.score).label,
+            ratings: current.map(c => c.rating).join(" ")});
+  renderLog();
+  $("name").value = "";
+  draw();
+  $("name").focus();
+  window.scrollTo({top: 0, behavior: "smooth"});
+};
+$("redrawBtn").onclick = draw;
+$("copyBtn").onclick = () => copy(resultLine());
+$("copyAllBtn").onclick = () => copy("Student\tScore /10\tBand\tRatings\n" + log.map(r => r.name + "\t" + r.score.toFixed(1) + "\t" + r.band + "\t" + r.ratings).join("\n"));
+["n1", "n2", "n3"].forEach(id => $(id).addEventListener("change", draw));
+$("themeBtn").onclick = () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+};
+
+renderParts();
+draw();
+</script>
+</body>
+</html>
