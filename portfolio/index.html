@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anas Aldadi — AI Engineer</title>
+  <meta name="description" content="Anas Aldadi — AI Engineer at Nabrah.AI working on audio processing and applied AI research. First-class honours Computer Science graduate, Umm Al-Qura University." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d7377'/%3E%3Ctext x='16' y='21' font-family='Arial' font-weight='700' font-size='13' fill='white' text-anchor='middle'%3EAA%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="top">
+    <div class="container nav__inner">
+      <a href="#top" class="nav__brand" aria-label="Anas Aldadi — home">
+        <span class="nav__logo">AA</span>
+        <span class="nav__name">Anas Aldadi</span>
+      </a>
+
+      <nav class="nav__links" id="navLinks" aria-label="Main">
+        <a href="#about">About</a>
+        <a href="#experience">Experience</a>
+        <a href="#education">Education</a>
+        <a href="#skills">Skills</a>
+        <a href="#contact" class="nav__cta">Contact</a>
+      </nav>
+
+      <div class="nav__actions">
+        <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode">
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+        <button class="icon-btn nav__burger" id="navToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="container hero__grid">
+        <div class="hero__text">
+          <p class="eyebrow"><span class="dot"></span> AI Engineer · Nabrah.AI</p>
+          <h1 class="hero__title">Anas Aldadi</h1>
+          <p class="hero__lead">
+            I build AI systems that listen. I work on <strong>audio processing</strong> and
+            <strong>applied AI research</strong> at Nabrah.AI, and I bring a background in
+            optimization research and leading AI teams.
+          </p>
+          <div class="hero__meta">
+            <span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.3-7-11.5A7 7 0 0 1 19 9.5C19 14.7 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+              Riyadh · Makkah, Saudi Arabia
+            </span>
+            <span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>
+              BSc Computer Science, First-Class Honours
+            </span>
+          </div>
+          <div class="hero__cta">
+            <a href="#experience" class="btn btn--primary">View my work</a>
+            <a href="https://www.linkedin.com/in/anas-aldadi-29251b246/" target="_blank" rel="noopener" class="btn btn--ghost">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.5h4V21H3zM9.5 9.5h3.8v1.6h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.2c0-1.24-.02-2.84-1.73-2.84-1.73 0-2 1.35-2 2.75V21h-4z"/></svg>
+              LinkedIn
+            </a>
+          </div>
+        </div>
+
+        <div class="hero__visual" aria-hidden="true">
+          <div class="wave-card">
+            <div class="wave-card__head">
+              <span class="wave-card__dot"></span>
+              <span class="mono">signal.wav · 16 kHz</span>
+            </div>
+            <div class="wave" id="wave"></div>
+            <div class="wave-card__foot mono">
+              <span>audio → features → model</span>
+              <span class="accent-text">● live</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Highlights strip -->
+      <div class="container">
+        <ul class="stats">
+          <li><strong>A+</strong><span>Oxford AI Summer School</span></li>
+          <li><strong>1st</strong><span>Class honours in CS</span></li>
+          <li><strong>4</strong><span>Professional certifications</span></li>
+          <li><strong>2025</strong><span>Joined Nabrah.AI</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="section" id="about">
+      <div class="container about">
+        <div class="section__label">
+          <span class="mono">01</span>
+          <h2>About</h2>
+        </div>
+        <div class="about__body">
+          <p class="about__lead">
+            I'm an AI Engineer based in Saudi Arabia. I like turning research ideas into
+            systems that work in the real world.
+          </p>
+          <p>
+            At <strong>Nabrah.AI</strong> I started as an AI Research Engineer intern and joined
+            full-time as an AI Engineer, working on audio processing and AI research &amp; development.
+            Before that, at the <strong>Institute of Hajj and Umrah Research</strong>, I modeled the
+            scheduling of pilgrim movement (<em>Tafweej</em>) as an optimization problem. That was a
+            real-world problem where scale and safety both mattered.
+          </p>
+          <p>
+            I earned a <strong>first-class honours</strong> degree in Computer Science from Umm Al-Qura
+            University, where I also led the university's Artificial Intelligence team. In 2025 I
+            completed the AI Summer School at the <strong>University of Oxford</strong> (Lady Margaret Hall)
+            with an A+.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EXPERIENCE ============ -->
+    <section class="section section--alt" id="experience">
+      <div class="container">
+        <div class="section__label">
+          <span class="mono">02</span>
+          <h2>Experience</h2>
+        </div>
+
+        <ol class="timeline">
+          <!-- Nabrah -->
+          <li class="role role--current">
+            <div class="role__when mono">Apr 2025 — Present</div>
+            <div class="role__card">
+              <div class="role__org">
+                <span class="org-badge org-badge--nabrah">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>
+                </span>
+                <div>
+                  <h3>AI Engineer</h3>
+                  <p class="role__company">Nabrah.AI <span class="ar" lang="ar">| نبره</span></p>
+                </div>
+                <span class="tag tag--live">Current</span>
+              </div>
+              <p class="role__meta">Full-time · Riyadh, Saudi Arabia · Hybrid</p>
+              <p>Building AI systems for audio, from signal processing through model development and deployment.</p>
+              <ul class="chips">
+                <li>Artificial Intelligence</li><li>Audio Processing</li><li>Machine Learning</li>
+              </ul>
+
+              <div class="role__sub">
+                <div class="role__sub-head">
+                  <h4>AI Research Engineer Intern</h4>
+                  <span class="mono">Jan 2025 — Mar 2025</span>
+                </div>
+                <p>Internship focused on audio processing research and development. This led to a full-time role.</p>
+                <ul class="chips">
+                  <li>Audio Processing</li><li>Research &amp; Development</li>
+                </ul>
+              </div>
+            </div>
+          </li>
+
+          <!-- Hajj & Umrah -->
+          <li class="role">
+            <div class="role__when mono">Jun 2024 — Aug 2024</div>
+            <div class="role__card">
+              <div class="role__org">
+                <span class="org-badge">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7.5 7.3l3.4 9M16.5 7.3l-3.4 9M8 6h8"/></svg>
+                </span>
+                <div>
+                  <h3>Research Intern</h3>
+                  <p class="role__company">The Institute of Hajj and Umrah Research</p>
+                </div>
+              </div>
+              <p class="role__meta">Internship · Jeddah / Makkah, Saudi Arabia · On-site</p>
+              <p>
+                Researched the scheduling of pilgrim movement (<em>Tafweej</em>) and modeled it as an
+                optimization problem to plan safe, efficient flows of very large crowds.
+              </p>
+              <ul class="chips">
+                <li>Network Optimization</li><li>Programming</li><li>Operations Research</li>
+              </ul>
+            </div>
+          </li>
+
+          <!-- UQU AI Team -->
+          <li class="role">
+            <div class="role__when mono">Mar 2023 — Sep 2023</div>
+            <div class="role__card">
+              <div class="role__org">
+                <span class="org-badge">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>
+                </span>
+                <div>
+                  <h3>Leader of the Artificial Intelligence Team</h3>
+                  <p class="role__company">Umm Al-Qura University</p>
+                </div>
+              </div>
+              <p class="role__meta">Full-time · Makkah, Saudi Arabia · Hybrid</p>
+              <p>Led the university's AI team, coordinating members and guiding AI and programming work.</p>
+              <ul class="chips">
+                <li>Leadership</li><li>Artificial Intelligence</li><li>Programming</li>
+              </ul>
+            </div>
+          </li>
+
+          <!-- Awontech -->
+          <li class="role">
+            <div class="role__when mono">Oct 2022</div>
+            <div class="role__card">
+              <div class="role__org">
+                <span class="org-badge">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>
+                </span>
+                <div>
+                  <h3>Programmer</h3>
+                  <p class="role__company">Awontech</p>
+                </div>
+              </div>
+              <p class="role__meta">Contract · Makkah, Saudi Arabia · On-site</p>
+              <p>Worked on the <strong>Sakhaa</strong> application and localized its interface from English to Arabic.</p>
+              <ul class="chips">
+                <li>HTML5</li><li>JavaScript</li><li>Localization</li>
+              </ul>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============ EDUCATION & CERTS ============ -->
+    <section class="section" id="education">
+      <div class="container">
+        <div class="section__label">
+          <span class="mono">03</span>
+          <h2>Education &amp; Certifications</h2>
+        </div>
+
+        <div class="edu-grid">
+          <article class="edu-card">
+            <div class="edu-card__top">
+              <span class="mono">Jul 2025 — Aug 2025</span>
+              <span class="grade">Grade A+</span>
+            </div>
+            <h3>University of Oxford</h3>
+            <p class="edu-card__deg">Summer School, Artificial Intelligence</p>
+            <p>
+              Lady Margaret Hall (LMH) AI Summer School, an intensive program covering modern
+              machine learning, from unsupervised learning to natural language processing.
+            </p>
+            <ul class="chips">
+              <li>Unsupervised Learning</li><li>NLP</li><li>Deep Learning</li>
+            </ul>
+          </article>
+
+          <article class="edu-card">
+            <div class="edu-card__top">
+              <span class="mono">2021 — 2025</span>
+              <span class="grade">First-Class Honours</span>
+            </div>
+            <h3>Umm Al-Qura University</h3>
+            <p class="edu-card__deg">Bachelor's Degree, Computer Science</p>
+            <p>
+              Graduated with first-class honours. Coursework and projects in programming, databases,
+              algorithms and artificial intelligence.
+            </p>
+            <ul class="chips">
+              <li>Python</li><li>SQL</li><li>Algorithms</li>
+            </ul>
+          </article>
+        </div>
+
+        <h3 class="sub-heading">Licenses &amp; Certifications</h3>
+        <div class="cert-grid">
+          <article class="cert">
+            <span class="cert__icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 14l-1.5 7 5-3 5 3-1.5-7"/></svg>
+            </span>
+            <div>
+              <h4>Machine Learning Practitioner</h4>
+              <p>SDAIA <span class="ar" lang="ar">| سدايا</span></p>
+              <span class="mono">Issued Oct 2023</span>
+            </div>
+          </article>
+          <!-- Add the remaining certifications by copying the <article class="cert"> block above -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SKILLS ============ -->
+    <section class="section section--alt" id="skills">
+      <div class="container">
+        <div class="section__label">
+          <span class="mono">04</span>
+          <h2>Skills</h2>
+        </div>
+
+        <div class="skills">
+          <div class="skill-group">
+            <h3>AI &amp; Machine Learning</h3>
+            <ul class="chips chips--lg">
+              <li>Artificial Intelligence</li><li>Machine Learning</li><li>Unsupervised Learning</li>
+              <li>Natural Language Processing</li><li>Deep Learning</li>
+            </ul>
+          </div>
+          <div class="skill-group">
+            <h3>Audio &amp; Research</h3>
+            <ul class="chips chips--lg">
+              <li>Audio Processing</li><li>Research &amp; Development</li>
+              <li>Network Optimization</li><li>Operations Research</li>
+            </ul>
+          </div>
+          <div class="skill-group">
+            <h3>Programming</h3>
+            <ul class="chips chips--lg">
+              <li>Python</li><li>SQL</li><li>JavaScript</li><li>HTML5</li>
+            </ul>
+          </div>
+          <div class="skill-group">
+            <h3>Professional</h3>
+            <ul class="chips chips--lg">
+              <li>Team Leadership</li><li>Localization (EN → AR)</li>
+              <li>Arabic &amp; English</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT ============ -->
+    <section class="section contact" id="contact">
+      <div class="container contact__inner">
+        <p class="eyebrow eyebrow--center"><span class="dot"></span> Open to collaboration</p>
+        <h2 class="contact__title">Let's build something that listens.</h2>
+        <p class="contact__text">
+          I'm happy to talk about AI engineering, audio and speech, research collaborations or new
+          opportunities. The best way to reach me is on LinkedIn.
+        </p>
+        <div class="hero__cta hero__cta--center">
+          <a href="https://www.linkedin.com/in/anas-aldadi-29251b246/" target="_blank" rel="noopener" class="btn btn--primary">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9.5h4V21H3zM9.5 9.5h3.8v1.6h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.2c0-1.24-.02-2.84-1.73-2.84-1.73 0-2 1.35-2 2.75V21h-4z"/></svg>
+            Connect on LinkedIn
+          </a>
+          <!-- Optional: add your email / GitHub here, e.g.
+          <a href="mailto:you@example.com" class="btn btn--ghost">Email me</a>
+          <a href="https://github.com/your-username" target="_blank" rel="noopener" class="btn btn--ghost">GitHub</a>
+          -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span>© <span id="year">2026</span> Anas Aldadi</span>
+      <a href="#top" class="mono">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
