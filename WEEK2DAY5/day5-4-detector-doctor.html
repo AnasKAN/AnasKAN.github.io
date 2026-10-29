@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detector Doctor · Day 5</title>
+<meta name="description" content="Day 5 Lab Part 2, exercise 4: match six symptoms from the lab to the right diagnosis and fix.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('ai256p-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      var s = localStorage.getItem('ai256p-scale');
+      if (s) document.documentElement.style.setProperty('--scale', s);
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root {
+    --scale: 1;
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    --radius: 14px;
+    --maxw: 1080px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1220; --bg-grid: rgba(148,163,196,0.06);
+    --surface: #151c2e; --surface-2: #1b2439; --line: #2a3550; --line-strong: #3a4766;
+    --text: #e8edf6; --muted: #9ba7bf; --faint: #6f7c96;
+    --accent: #f5a524; --accent-ink: #1a1203; --accent-soft: rgba(245,165,36,0.14);
+    --blue: #6ea8ff; --blue-soft: rgba(110,168,255,0.13);
+    --good: #3ecf8e; --good-soft: rgba(62,207,142,0.14);
+    --bad: #ff6b7d; --bad-soft: rgba(255,107,125,0.12);
+    --warn: #f5c451;
+    --train: #ff5f6d; --val: #5aa2ff;
+    --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.25);
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --bg-grid: rgba(15,23,42,0.05);
+    --surface: #f6f7fa; --surface-2: #eef1f6; --line: #d5dbe6; --line-strong: #aeb8c9;
+    --text: #0b1220; --muted: #3f4a5e; --faint: #5f6b80;
+    --accent: #b45f00; --accent-ink: #ffffff; --accent-soft: rgba(180,95,0,0.10);
+    --blue: #1d4ed8; --blue-soft: rgba(29,78,216,0.09);
+    --good: #047857; --good-soft: rgba(4,120,87,0.10);
+    --bad: #be123c; --bad-soft: rgba(190,18,60,0.08);
+    --warn: #92400e;
+    --train: #d4283a; --val: #1f5fd6;
+    --shadow: 0 1px 2px rgba(15,23,42,0.06);
+  }
+  * { box-sizing: border-box; }
+  html { font-size: calc(17px * var(--scale)); -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background-color: var(--bg);
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--text); font-family: var(--font); line-height: 1.6;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  a { color: var(--blue); }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+  .topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .topbar .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+  .crumb { font-family: var(--mono); font-size: .78rem; color: var(--muted); letter-spacing: .02em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crumb b { color: var(--text); font-weight: 600; }
+  .tools { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn { font: 600 .82rem var(--font); color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; height: 36px; min-width: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+  .icon-btn:hover { border-color: var(--line-strong); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .theme-label { display: none; }
+  @media (min-width: 640px) { .theme-label { display: inline; } }
+
+  .exnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 22px 0 0; font-size: .84rem; }
+  .exnav .lbl { font-family: var(--mono); color: var(--faint); font-size: .74rem; letter-spacing: .04em; margin-right: 4px; }
+  .exnav a { text-decoration: none; color: var(--muted); border: 1px solid var(--line); background: var(--surface); padding: 3px 11px; border-radius: 999px; }
+  .exnav a:hover { border-color: var(--line-strong); color: var(--text); }
+  .exnav a[aria-current="page"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+  header.hero { padding: 26px 0 4px; }
+  .kicker { font-family: var(--mono); color: var(--accent); font-size: .85rem; letter-spacing: .04em; margin: 0 0 6px; }
+  h1 { font-size: clamp(1.8rem, 4.2vw, 2.7rem); line-height: 1.15; margin: 0 0 14px; letter-spacing: -0.015em; }
+  .lede { font-size: 1.08rem; color: var(--muted); max-width: 68ch; margin: 0; }
+  .lede strong { color: var(--text); }
+  section { margin: 34px 0; scroll-margin-top: 72px; }
+  h2 { font-size: 1.3rem; margin: 0 0 14px; letter-spacing: -0.005em; display: flex; align-items: baseline; gap: 10px; }
+  h2 .num { font-family: var(--mono); font-size: .85rem; color: var(--accent); font-weight: 500; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+
+  .collab { display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: var(--blue-soft); border: 1px dashed var(--blue); border-radius: var(--radius); margin-top: 18px; max-width: 68ch; }
+  .collab svg { flex-shrink: 0; width: 24px; height: 24px; color: var(--blue); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn { font: 600 .98rem var(--font); border-radius: 11px; padding: 11px 18px; cursor: pointer; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); }
+  .btn:hover:not(:disabled) { border-color: var(--text); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.06); border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn[hidden] { display: none; }
+  .feedback { margin-top: 14px; padding: 12px 16px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface-2); display: none; }
+  .feedback.show { display: block; }
+  .feedback.good { background: var(--good-soft); border-color: var(--good); }
+  .feedback.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .feedback b { font-size: 1.05rem; }
+
+  .reveal { display: none; }
+  .reveal.show { display: block; animation: rise .35s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .takeaways { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+  .takeaways .card { padding: 16px 18px; }
+  .takeaways h4 { margin: 0 0 6px; font-size: 1rem; }
+  .takeaways p { margin: 0; color: var(--muted); font-size: .93rem; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 50px; padding: 20px 0 40px; color: var(--faint); font-size: .85rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+  footer .next { font-weight: 600; text-decoration: none; }
+  .linkbtn { background: none; border: none; color: var(--faint); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .9rem; opacity: 0; pointer-events: none; transition: all .2s; z-index: 20; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  .hint { color: var(--faint); font-size: .88rem; margin: 0 0 12px; }
+  .actions { margin-top: 18px; }
+  .score { font-family: var(--mono); font-weight: 600; }
+  .cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .case { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; transition: border-color .15s, background-color .15s; }
+  .ctop { display: flex; align-items: center; gap: 10px; }
+  .cnum { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font: 600 .95rem var(--mono); background: var(--surface-2); border: 1px solid var(--line); flex-shrink: 0; }
+  .ctag { font: 600 .72rem var(--mono); letter-spacing: .05em; color: var(--accent); background: var(--accent-soft); padding: 2px 9px; border-radius: 999px; }
+  .symptom { font-size: 1.02rem; line-height: 1.5; margin: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; }
+  .symptom code { font-size: .86em; }
+  .copts { display: grid; gap: 6px; }
+  .copt { text-align: left; font: 500 .92rem var(--font); line-height: 1.45; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); cursor: pointer; display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+  .copt .l { font: 600 .85rem var(--mono); color: var(--faint); }
+  .copt code { font-size: .84em; }
+  .copt:hover { border-color: var(--text); }
+  .copt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .copt[aria-pressed="true"] .l { color: var(--accent); }
+  .case.right { border-color: var(--good); background: linear-gradient(0deg, var(--good-soft), var(--good-soft)), var(--surface); }
+  .case.wrong { border-color: var(--bad); background: linear-gradient(0deg, var(--bad-soft), var(--bad-soft)), var(--surface); }
+  .case.right .cnum { background: var(--good); color: var(--bg); border-color: var(--good); }
+  .case.wrong .cnum { background: var(--bad); color: var(--bg); border-color: var(--bad); }
+  .copt.answer { border-color: var(--good); box-shadow: 0 0 0 2px var(--good-soft); }
+  .why { display: none; font-size: .9rem; color: var(--muted); border-top: 1px dashed var(--line-strong); padding-top: 10px; margin: 0; }
+  .case.right .why, .case.revealed .why { display: block; }
+
+  .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .flow .card { padding: 14px 16px; }
+  .flow .st { font: 600 .74rem var(--mono); color: var(--accent); letter-spacing: .05em; }
+  .flow h4 { margin: 2px 0 4px; font-size: 1rem; }
+  .flow p { margin: 0; color: var(--muted); font-size: .9rem; }
+  .note { margin-top: 14px; padding: 16px 18px; border-left: 4px solid var(--blue); max-width: 860px; }
+  .note h4 { margin: 0 0 6px; }
+  .note p { margin: 0; color: var(--muted); font-size: .94rem; }
+  @media (max-width: 560px) { .cases { grid-template-columns: 1fr; } }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="crumb">KAUST Academy · Applied CV · <b>Day 5 Lab · Part 2</b> · Exercise 4</div>
+    <div class="tools">
+      <button class="icon-btn" id="smaller" title="Smaller text" aria-label="Smaller text">A−</button>
+      <button class="icon-btn" id="bigger" title="Bigger text" aria-label="Bigger text">A+</button>
+      <button class="icon-btn" id="theme" title="Switch theme" aria-label="Switch between dark and light mode">
+        <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>
+        <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+        <span class="theme-label" id="theme-label">Light mode</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <nav class="exnav" aria-label="Day 5 Part 2 exercises"><span class="lbl">DAY 5 · PART 2 EXERCISES</span><a href="day5-1-pyramid-heads.html">1 · Pyramid</a><a href="day5-2-be-the-nms.html">2 · NMS</a><a href="day5-3-pick-the-threshold.html">3 · Threshold</a><a href="day5-4-detector-doctor.html" aria-current="page">4 · Doctor</a></nav>
+
+  <header class="hero">
+    <p class="kicker">EXERCISE 4 · THE WHOLE LAB IN SIX SYMPTOMS (§1 – §8)</p>
+    <h1>Detector doctor.</h1>
+    <p class="lede">Six detectors come in with something wrong. Every symptom is a number the lab taught you to measure. <strong>For each one, pick the right diagnosis and fix.</strong></p>
+    <div class="collab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.3A5 5 0 0 1 21 19"/></svg>
+      <div><b>Work with the person next to you.</b> Split the six cases, three each, then explain your picks to each other before you check.</div>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span>The waiting room</h2>
+    <p class="hint">One answer per case. You can change your mind until you check.</p>
+    <div class="cases" id="cases"></div>
+    <div class="actions">
+      <button class="btn primary" id="check">Check our diagnoses</button>
+      <button class="btn" id="show" hidden>Show the diagnoses</button>
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+  </section>
+
+  <section class="reveal" id="debrief">
+    <h2><span class="num">02</span>Debrief: the checklist you just used</h2>
+    <div class="flow" id="flow"></div>
+    <div class="card note">
+      <h4>The habit behind all six</h4>
+      <p>None of these problems show up in a single mAP number. Each one was found by <b>slicing</b> (by split, IoU, class, corruption or time) and comparing against a <b>baseline</b>. Keep the tables as regression tests and re-run them for every new model.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Day 5 · Lab Part 2 · Robust object detection · lab by <b>Anas Aldadi</b></span>
+    <span><button class="linkbtn" id="reset">Reset this page</button> &nbsp;·&nbsp; <a class="next" href="day5-1-pyramid-heads.html">Back to the start ↺</a></span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800); }
+  (function () {
+    var root = document.documentElement;
+    function syncTheme() {
+      var dark = root.getAttribute('data-theme') !== 'light';
+      $('ico-sun').style.display = dark ? '' : 'none';
+      $('ico-moon').style.display = dark ? 'none' : '';
+      $('theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+    }
+    $('theme').addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('ai256p-theme', next); } catch (e) {}
+      syncTheme();
+    });
+    function scale(d) {
+      var cur = parseFloat(getComputedStyle(root).getPropertyValue('--scale')) || 1;
+      var nx = Math.min(1.5, Math.max(0.85, Math.round((cur + d) * 100) / 100));
+      root.style.setProperty('--scale', nx);
+      try { localStorage.setItem('ai256p-scale', nx); } catch (e) {}
+    }
+    $('bigger').addEventListener('click', function () { scale(0.1); });
+    $('smaller').addEventListener('click', function () { scale(-0.1); });
+    syncTheme();
+  })();
+
+  var CASES = [
+    { id: 'c1', tag: '§1.4 AUDIT', stage: 'Audit', check: 'dHash train ↔ test',
+      s: 'dHash check: <b>41 of 750</b> test images have a near-duplicate in train (≤ 5 of 64 bits differ).',
+      o: ['Too few background images. Add about 10 % empty frames.',
+          'Leakage: the test score is inflated. Split by scene / camera / day, then re-split.',
+          'Objects are too small. Retrain at <code>imgsz=1024</code>.'], a: 1,
+      why: 'The same scene in train and test lets the model "remember" the answer, so every metric looks better than it is. Splitting by image doesn\'t prevent this; splitting by scene, camera or day does.' },
+    { id: 'c2', tag: '§4.4 TRAIN', stage: 'Train', check: 'early stop vs. close_mosaic',
+      s: 'Early stopping fired at <b>epoch 42</b> of <code>epochs=60</code>, with <code>close_mosaic=10</code>.',
+      o: ['Over-fitting. Lower the learning rate.',
+          'All good. Early stopping saved us 18 epochs.',
+          'Mosaic was never switched off (that starts at epoch 50). Give the run room to reach the last 10 epochs, e.g. raise <code>patience</code>.'], a: 2,
+      why: '<code>close_mosaic=10</code> trains the last 10 epochs (50 → 60) on realistic, un-stitched images. Stopping at 42 skips that phase entirely. It\'s a classic industry gotcha.' },
+    { id: 'c3', tag: '§5.3 EVALUATE', stage: 'Evaluate', check: 'AP vs. IoU threshold',
+      s: 'AP at τ = 0.50 is <b>0.82</b>, then it falls off a cliff: <b>0.45</b> at τ = 0.75.',
+      o: ['Objects are found but boxed loosely. Check annotation tightness and <code>imgsz</code>.',
+          'Too many false positives. Raise the confidence threshold.',
+          'NMS is too strict. Raise τ<sub>NMS</sub>.'], a: 0,
+      why: 'At τ = 0.5 a loose box still counts as a match; at 0.75 it doesn\'t. A gentle decline means tight boxes. A cliff right after 0.5 means the objects are found but the boxes are sloppy.' },
+    { id: 'c4', tag: '§5.4 SLICE BY CLASS', stage: 'Slice', check: 'AP vs. training instances',
+      s: '<code>person</code>: AP50-95 = <b>0.01</b> with 519 training boxes. <code>helmet</code>: 0.63 with 13,198.',
+      o: ['Lots of examples but still low. Rewrite the labelling guide.',
+          'Measure <code>person</code> at <code>conf=0.5</code> instead of 0.001.',
+          'Rare class. Collect more <code>person</code> images, or merge it into a neighbour.'], a: 2,
+      why: '519 is far below the lab\'s <code>RARE = 1000</code> line, so this is a quantity problem, not a definition problem. The §1 audit predicted it before a single epoch. (And never evaluate at conf = 0.5: that is the near-zero trap.)' },
+    { id: 'c5', tag: '§7.2 STRESS-TEST', stage: 'Stress-test', check: 'rPC per corruption',
+      s: 'rPC: low_light <b>0.99</b> · blur <b>0.86</b> · noise <b>0.84</b> · jpeg <b>0.76</b>.',
+      o: ['Raise <code>hsv_v</code>. Night is the weak spot.',
+          'Add frames from the real, compressed video stream to training, then re-run this table.',
+          'Turn on <code>flipud=0.5</code>.'], a: 1,
+      why: 'JPEG is the weakest (0.76). Low light costs almost nothing (0.99), so <code>hsv_v</code> is not the fix, and people are never upside down, so <code>flipud</code> stays off. Keep the table as a regression test.' },
+    { id: 'c6', tag: '§8 DEPLOY', stage: 'Deploy', check: 'latency budget',
+      s: 'The camera runs at <b>30 FPS</b>. Measured per frame: decode 4 ms + preprocess 1 ms + forward 21 ms + NMS &amp; postprocess 10 ms.',
+      o: ['Fine. The forward pass alone is well under 33 ms.',
+          'Over budget: 36 ms &gt; 33.3 ms. Use a smaller model, <code>imgsz</code> or FP16, and cut the surviving boxes (raise conf) so NMS gets cheaper.',
+          'Turn on TTA (<code>augment=True</code>) to win the accuracy back.'], a: 1,
+      why: 'The <b>whole</b> sum must fit in 1000 / 30 = 33.3 ms, not only the forward pass. 4 + 1 + 21 + 10 = 36 ms. TTA would multiply the forward cost, the opposite of what we need.' }
+  ];
+  var LET = ['A', 'B', 'C'];
+
+  var picks = {}, checked = false, revealed = false, cases = $('cases');
+  CASES.forEach(function (c, i) {
+    var el = document.createElement('div');
+    el.className = 'card case'; el.dataset.id = c.id;
+    el.innerHTML = '<div class="ctop"><span class="cnum">' + (i + 1) + '</span><span class="ctag">' + c.tag + '</span></div>' +
+      '<p class="symptom">' + c.s + '</p><div class="copts" role="group" aria-label="Diagnosis for case ' + (i + 1) + '">' +
+      c.o.map(function (t, k) { return '<button class="copt" data-k="' + k + '" aria-pressed="false"><span class="l">' + LET[k] + '</span><span>' + t + '</span></button>'; }).join('') +
+      '</div><p class="why">' + c.why + '</p>';
+    cases.appendChild(el);
+    el.querySelector('.copts').addEventListener('click', function (e) {
+      var b = e.target.closest('.copt'); if (!b) return;
+      picks[c.id] = +b.dataset.k; clearMarks(); render();
+    });
+  });
+  function render() {
+    Array.prototype.forEach.call(cases.children, function (el) {
+      Array.prototype.forEach.call(el.querySelectorAll('.copt'), function (b) { b.setAttribute('aria-pressed', picks[el.dataset.id] === +b.dataset.k ? 'true' : 'false'); });
+    });
+  }
+  function clearMarks() {
+    if (!checked) return;
+    checked = false; revealed = false;
+    Array.prototype.forEach.call(cases.children, function (el) {
+      el.classList.remove('right', 'wrong', 'revealed');
+      Array.prototype.forEach.call(el.querySelectorAll('.copt'), function (b) { b.classList.remove('answer'); });
+    });
+    $('feedback').className = 'feedback';
+  }
+  function mark() {
+    var right = 0;
+    CASES.forEach(function (c) {
+      var el = cases.querySelector('[data-id="' + c.id + '"]'), ok = picks[c.id] === c.a;
+      if (ok) right++;
+      el.classList.toggle('right', ok); el.classList.toggle('wrong', !ok);
+    });
+    checked = true; return right;
+  }
+  $('flow').innerHTML = CASES.map(function (c, i) {
+    return '<div class="card"><span class="st">' + (i + 1) + ' · ' + c.stage.toUpperCase() + '</span><h4>' + c.check + '</h4><p>' + c.o[c.a].replace(/<[^>]+>/g, '') + '</p></div>';
+  }).join('');
+  $('check').addEventListener('click', function () {
+    var right = mark(), fb = $('feedback');
+    if (right === CASES.length) {
+      fb.className = 'feedback show good';
+      fb.innerHTML = '<b>6 / 6. Every patient goes home healthy.</b> Each card now explains why. The checklist is below.';
+      $('debrief').classList.add('show'); $('show').hidden = true;
+    } else {
+      fb.className = 'feedback show bad';
+      fb.innerHTML = '<b><span class="score">' + right + ' / 6</span> diagnosed correctly.</b> The green cards show why. Have another look at the red ones.';
+      $('show').hidden = false;
+    }
+  });
+  $('show').addEventListener('click', function () {
+    CASES.forEach(function (c) { picks[c.id] = c.a; });
+    render(); mark();
+    Array.prototype.forEach.call(cases.children, function (el) { el.classList.add('revealed'); });
+    $('feedback').className = 'feedback show good';
+    $('feedback').innerHTML = '<b>Here are the diagnoses.</b> Each card explains why. The checklist is below.';
+    $('show').hidden = true; $('debrief').classList.add('show');
+    $('debrief').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('reset').addEventListener('click', function () {
+    picks = {}; checked = true; clearMarks(); render();
+    $('show').hidden = true; $('debrief').classList.remove('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+})();
+</script>
+</body>
+</html>

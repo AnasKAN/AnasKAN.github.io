@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which Head Catches It · Day 5</title>
+<meta name="description" content="Day 5 Lab Part 2, exercise 1: decide which YOLO pyramid level (stride 8, 16 or 32) owns each object.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('ai256p-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      var s = localStorage.getItem('ai256p-scale');
+      if (s) document.documentElement.style.setProperty('--scale', s);
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root {
+    --scale: 1;
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    --radius: 14px;
+    --maxw: 1080px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1220; --bg-grid: rgba(148,163,196,0.06);
+    --surface: #151c2e; --surface-2: #1b2439; --line: #2a3550; --line-strong: #3a4766;
+    --text: #e8edf6; --muted: #9ba7bf; --faint: #6f7c96;
+    --accent: #f5a524; --accent-ink: #1a1203; --accent-soft: rgba(245,165,36,0.14);
+    --blue: #6ea8ff; --blue-soft: rgba(110,168,255,0.13);
+    --good: #3ecf8e; --good-soft: rgba(62,207,142,0.14);
+    --bad: #ff6b7d; --bad-soft: rgba(255,107,125,0.12);
+    --warn: #f5c451;
+    --train: #ff5f6d; --val: #5aa2ff;
+    --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.25);
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --bg-grid: rgba(15,23,42,0.05);
+    --surface: #f6f7fa; --surface-2: #eef1f6; --line: #d5dbe6; --line-strong: #aeb8c9;
+    --text: #0b1220; --muted: #3f4a5e; --faint: #5f6b80;
+    --accent: #b45f00; --accent-ink: #ffffff; --accent-soft: rgba(180,95,0,0.10);
+    --blue: #1d4ed8; --blue-soft: rgba(29,78,216,0.09);
+    --good: #047857; --good-soft: rgba(4,120,87,0.10);
+    --bad: #be123c; --bad-soft: rgba(190,18,60,0.08);
+    --warn: #92400e;
+    --train: #d4283a; --val: #1f5fd6;
+    --shadow: 0 1px 2px rgba(15,23,42,0.06);
+  }
+  * { box-sizing: border-box; }
+  html { font-size: calc(17px * var(--scale)); -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background-color: var(--bg);
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--text); font-family: var(--font); line-height: 1.6;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  a { color: var(--blue); }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+  .topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .topbar .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+  .crumb { font-family: var(--mono); font-size: .78rem; color: var(--muted); letter-spacing: .02em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crumb b { color: var(--text); font-weight: 600; }
+  .tools { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn { font: 600 .82rem var(--font); color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; height: 36px; min-width: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+  .icon-btn:hover { border-color: var(--line-strong); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .theme-label { display: none; }
+  @media (min-width: 640px) { .theme-label { display: inline; } }
+
+  .exnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 22px 0 0; font-size: .84rem; }
+  .exnav .lbl { font-family: var(--mono); color: var(--faint); font-size: .74rem; letter-spacing: .04em; margin-right: 4px; }
+  .exnav a { text-decoration: none; color: var(--muted); border: 1px solid var(--line); background: var(--surface); padding: 3px 11px; border-radius: 999px; }
+  .exnav a:hover { border-color: var(--line-strong); color: var(--text); }
+  .exnav a[aria-current="page"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+  header.hero { padding: 26px 0 4px; }
+  .kicker { font-family: var(--mono); color: var(--accent); font-size: .85rem; letter-spacing: .04em; margin: 0 0 6px; }
+  h1 { font-size: clamp(1.8rem, 4.2vw, 2.7rem); line-height: 1.15; margin: 0 0 14px; letter-spacing: -0.015em; }
+  .lede { font-size: 1.08rem; color: var(--muted); max-width: 68ch; margin: 0; }
+  .lede strong { color: var(--text); }
+  section { margin: 34px 0; scroll-margin-top: 72px; }
+  h2 { font-size: 1.3rem; margin: 0 0 14px; letter-spacing: -0.005em; display: flex; align-items: baseline; gap: 10px; }
+  h2 .num { font-family: var(--mono); font-size: .85rem; color: var(--accent); font-weight: 500; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+
+  .collab { display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: var(--blue-soft); border: 1px dashed var(--blue); border-radius: var(--radius); margin-top: 18px; max-width: 68ch; }
+  .collab svg { flex-shrink: 0; width: 24px; height: 24px; color: var(--blue); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn { font: 600 .98rem var(--font); border-radius: 11px; padding: 11px 18px; cursor: pointer; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); }
+  .btn:hover:not(:disabled) { border-color: var(--text); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.06); border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn[hidden] { display: none; }
+  .feedback { margin-top: 14px; padding: 12px 16px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface-2); display: none; }
+  .feedback.show { display: block; }
+  .feedback.good { background: var(--good-soft); border-color: var(--good); }
+  .feedback.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .feedback b { font-size: 1.05rem; }
+
+  .reveal { display: none; }
+  .reveal.show { display: block; animation: rise .35s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .takeaways { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+  .takeaways .card { padding: 16px 18px; }
+  .takeaways h4 { margin: 0 0 6px; font-size: 1rem; }
+  .takeaways p { margin: 0; color: var(--muted); font-size: .93rem; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 50px; padding: 20px 0 40px; color: var(--faint); font-size: .85rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+  footer .next { font-weight: 600; text-decoration: none; }
+  .linkbtn { background: none; border: none; color: var(--faint); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .9rem; opacity: 0; pointer-events: none; transition: all .2s; z-index: 20; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  .hint { color: var(--faint); font-size: .88rem; margin: 0 0 12px; }
+  .actions { margin-top: 18px; }
+  .score { font-family: var(--mono); font-weight: 600; }
+  .rule { padding: 20px 22px; max-width: 860px; }
+  .formula { font-family: var(--mono); font-size: 1.12rem; margin: 0; line-height: 1.8; }
+  .formula span { background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px; padding: 2px 8px; white-space: nowrap; }
+  .bands { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .band { background: var(--surface-2); border: 1px solid var(--line); border-radius: 11px; padding: 10px 14px; display: grid; gap: 1px; }
+  .band b { font-family: var(--mono); font-size: 1.1rem; color: var(--accent); }
+  .bsize { font-size: .9rem; font-weight: 600; }
+  .bgrid { color: var(--muted); font-size: .84rem; }
+
+  .objs { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .obj { padding: 16px; display: grid; grid-template-columns: 150px 1fr; gap: 14px; align-items: start; transition: border-color .15s, background-color .15s; }
+  .obj .thumb { width: 150px; height: 150px; display: grid; place-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; }
+  .obj .thumb svg { display: block; }
+  .oname { font-weight: 600; font-size: 1.02rem; line-height: 1.3; margin-bottom: 4px; }
+  .ometa { font-size: .88rem; color: var(--muted); line-height: 1.5; }
+  .ometa code { font-size: .84em; }
+  .opts { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .opt { font: 600 .86rem var(--mono); padding: 9px 4px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); cursor: pointer; }
+  .opt small { display: block; font: 400 .72rem var(--font); color: var(--muted); }
+  .opt:hover { border-color: var(--text); }
+  .opt[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .opt[aria-pressed="true"] small { color: var(--accent-ink); }
+  .obj.right { border-color: var(--good); background: linear-gradient(0deg, var(--good-soft), var(--good-soft)), var(--surface); }
+  .obj.wrong { border-color: var(--bad); background: linear-gradient(0deg, var(--bad-soft), var(--bad-soft)), var(--surface); }
+  .verdict { grid-column: 1 / -1; font-size: .88rem; display: none; }
+  .obj.right .verdict, .obj.wrong .verdict { display: block; }
+  .obj.right .verdict { color: var(--good); }
+  .obj.wrong .verdict { color: var(--bad); }
+
+  .qf { display: grid; gap: 12px; max-width: 860px; }
+  .q { padding: 14px 16px; }
+  .q p { margin: 0 0 10px; font-weight: 600; }
+  .q .opts { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+  .q.right { border-color: var(--good); }
+  .q.wrong { border-color: var(--bad); }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .93rem; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { font-size: .76rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 600; background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  td.mono { font-family: var(--mono); white-space: nowrap; }
+  @media (max-width: 560px) {
+    .objs { grid-template-columns: 1fr; }
+    .obj { grid-template-columns: 110px 1fr; }
+    .obj .thumb { width: 110px; height: 110px; }
+    .obj .thumb svg { transform: scale(.72); }
+    .formula { font-size: .95rem; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="crumb">KAUST Academy · Applied CV · <b>Day 5 Lab · Part 2</b> · Exercise 1</div>
+    <div class="tools">
+      <button class="icon-btn" id="smaller" title="Smaller text" aria-label="Smaller text">A−</button>
+      <button class="icon-btn" id="bigger" title="Bigger text" aria-label="Bigger text">A+</button>
+      <button class="icon-btn" id="theme" title="Switch theme" aria-label="Switch between dark and light mode">
+        <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>
+        <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+        <span class="theme-label" id="theme-label">Light mode</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <nav class="exnav" aria-label="Day 5 Part 2 exercises"><span class="lbl">DAY 5 · PART 2 EXERCISES</span><a href="day5-1-pyramid-heads.html" aria-current="page">1 · Pyramid</a><a href="day5-2-be-the-nms.html">2 · NMS</a><a href="day5-3-pick-the-threshold.html">3 · Threshold</a><a href="day5-4-detector-doctor.html">4 · Doctor</a></nav>
+
+  <header class="hero">
+    <p class="kicker">EXERCISE 1 · THE FEATURE PYRAMID (§1.2 · §2)</p>
+    <h1>Which head catches it?</h1>
+    <p class="lede">YOLO11 looks at every 640 × 640 image through <strong>three grids</strong>: a fine one for small things, a coarse one for big things. Six objects from different cameras are below. <strong>For each one, pick the grid that will own it.</strong></p>
+    <div class="collab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.3A5 5 0 0 1 21 19"/></svg>
+      <div><b>Work with the person next to you.</b> Do the arithmetic together, one of you per object, then swap and check each other.</div>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span>The rule of thumb</h2>
+    <div class="card rule">
+      <p class="formula"><span>size at 640</span> = <span>√(w × h)</span> × <span>640 / max(W, H)</span></p>
+      <p class="hint" style="margin:6px 0 14px">Letterbox first (§2.1): the long side of the image becomes 640. Then compare against the §1.2 histogram lines.</p>
+      <div class="bands">
+        <div class="band"><span class="bsize">&lt; 32 px · small</span><b>stride 8</b><span class="bgrid">80 × 80 grid · 6,400 cells</span></div>
+        <div class="band"><span class="bsize">32 – 96 px · medium</span><b>stride 16</b><span class="bgrid">40 × 40 grid · 1,600 cells</span></div>
+        <div class="band"><span class="bsize">≥ 96 px · large</span><b>stride 32</b><span class="bgrid">20 × 20 grid · 400 cells</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>Six objects, six cameras</h2>
+    <p class="hint">√area is already worked out for you. Only the letterbox scaling is left. Tap a grid for each object.</p>
+    <div class="objs" id="objs"></div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>Quick-fire: count the candidates</h2>
+    <div class="qf" id="qf"></div>
+    <div class="actions">
+      <button class="btn primary" id="check">Check our answers</button>
+      <button class="btn" id="show" hidden>Show the answers</button>
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+  </section>
+
+  <section class="reveal" id="debrief">
+    <h2><span class="num">04</span>Debrief: the arithmetic</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Object</th><th>√area</th><th>Image</th><th>× 640 / max</th><th>Size at 640</th><th>Owner</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="takeaways">
+      <div class="card"><h4>Letterbox can shrink or grow</h4><p>A 1920-wide CCTV frame is shrunk 3×, so a 30 px helmet becomes 10 px. A 416 px dataset image is <em>enlarged</em> 1.54×. The camera's resolution is not what the network sees.</p></div>
+      <div class="card"><h4>10 px ≈ one stride-8 cell</h4><p>A stride-8 cell covers 8 × 8 px. A 10 px helmet is barely more than one cell, which is why small objects are hard and why §7.1 tries <code>imgsz=1024</code>.</p></div>
+      <div class="card"><h4>8,400 = 80² + 40² + 20²</h4><p>One candidate per cell per grid. At 1024 px it is 128² + 64² + 32² = 21,504 candidates, about 2.6× the work.</p></div>
+      <div class="card"><h4>A rule of thumb, not a law</h4><p>YOLO11 assigns positives with task-aligned assignment, not hard size bands. But the §2.3 heatmaps show the banding is real: the bus fires on stride 32, the small workers on the fine grids.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Day 5 · Lab Part 2 · Robust object detection · lab by <b>Anas Aldadi</b></span>
+    <span><button class="linkbtn" id="reset">Reset this page</button> &nbsp;·&nbsp; <a class="next" href="day5-2-be-the-nms.html">Next: NMS →</a></span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800); }
+  (function () {
+    var root = document.documentElement;
+    function syncTheme() {
+      var dark = root.getAttribute('data-theme') !== 'light';
+      $('ico-sun').style.display = dark ? '' : 'none';
+      $('ico-moon').style.display = dark ? 'none' : '';
+      $('theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+    }
+    $('theme').addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('ai256p-theme', next); } catch (e) {}
+      syncTheme();
+    });
+    function scale(d) {
+      var cur = parseFloat(getComputedStyle(root).getPropertyValue('--scale')) || 1;
+      var nx = Math.min(1.5, Math.max(0.85, Math.round((cur + d) * 100) / 100));
+      root.style.setProperty('--scale', nx);
+      try { localStorage.setItem('ai256p-scale', nx); } catch (e) {}
+    }
+    $('bigger').addEventListener('click', function () { scale(0.1); });
+    $('smaller').addEventListener('click', function () { scale(-0.1); });
+    syncTheme();
+  })();
+
+  var OBJS = [
+    { id: 'a', name: 'Helmet on a site CCTV camera', w: 30,  h: 30,  W: 1920, H: 1080, fx: .72, fy: .32 },
+    { id: 'b', name: 'Whole worker, same CCTV camera', w: 120, h: 360, W: 1920, H: 1080, fx: .38, fy: .58 },
+    { id: 'c', name: 'The bus from §2 (bus.jpg)',      w: 700, h: 900, W: 810,  H: 1080, fx: .5,  fy: .5 },
+    { id: 'd', name: 'Bare head in a hard-hat dataset image', w: 40, h: 48, W: 416, H: 416, fx: .55, fy: .4 },
+    { id: 'e', name: 'Worker seen by a drone',          w: 60,  h: 150, W: 4000, H: 3000, fx: .3, fy: .68 },
+    { id: 'f', name: 'Helmet close-up on a phone photo', w: 300, h: 260, W: 640,  H: 480,  fx: .5, fy: .5 }
+  ];
+  var STRIDES = [8, 16, 32];
+  var QF = [
+    { id: 'q1', q: 'A 640 × 640 input: how many candidates leave the head?', opts: ['6,400', '8,400', '409,600'], a: '8,400' },
+    { id: 'q2', q: 'Same model, 1024 × 1024 input: how many now?', opts: ['8,400', '13,440', '21,504'], a: '21,504' }
+  ];
+  function sqrtArea(o) { return Math.sqrt(o.w * o.h); }
+  function size640(o) { return sqrtArea(o) * 640 / Math.max(o.W, o.H); }
+  function owner(o) { var s = size640(o); return s < 32 ? 8 : s < 96 ? 16 : 32; }
+  var GRID = { 8: '80 × 80', 16: '40 × 40', 32: '20 × 20' };
+  var BUCKET = { 8: 'small', 16: 'medium', 32: 'large' };
+
+  var picks = {}, checked = false;
+
+  function thumb(o) {
+    var M = 140, fw = o.W >= o.H ? M : M * o.W / o.H, fh = o.W >= o.H ? M * o.H / o.W : M;
+    var bw = Math.max(2, fw * o.w / o.W), bh = Math.max(2, fh * o.h / o.H);
+    var bx = fw * o.fx - bw / 2, by = fh * o.fy - bh / 2;
+    return '<svg width="' + (fw + 2) + '" height="' + (fh + 2) + '" viewBox="-1 -1 ' + (fw + 2) + ' ' + (fh + 2) + '" aria-hidden="true">' +
+      '<rect x="0" y="0" width="' + fw + '" height="' + fh + '" rx="3" style="fill:var(--surface-2);stroke:var(--line-strong)"/>' +
+      '<rect x="' + bx + '" y="' + by + '" width="' + bw + '" height="' + bh + '" style="fill:var(--accent-soft);stroke:var(--accent)" stroke-width="1.5"/></svg>';
+  }
+  function fmt(n) { return n.toLocaleString('en-US'); }
+
+  var objs = $('objs');
+  OBJS.forEach(function (o) {
+    var el = document.createElement('div');
+    el.className = 'card obj'; el.dataset.id = o.id;
+    el.innerHTML = '<div class="thumb">' + thumb(o) + '</div>' +
+      '<div><div class="oname">' + o.name + '</div><div class="ometa">box <code>' + o.w + ' × ' + o.h + '</code> px<br>√area ≈ <b>' + Math.round(sqrtArea(o)) + ' px</b><br>image <code>' + o.W + ' × ' + o.H + '</code></div></div>' +
+      '<div class="opts" role="group" aria-label="Grid for ' + o.name + '">' + STRIDES.map(function (s) {
+        return '<button class="opt" data-s="' + s + '" aria-pressed="false">stride ' + s + '<small>' + GRID[s] + '</small></button>';
+      }).join('') + '</div><div class="verdict"></div>';
+    objs.appendChild(el);
+    el.querySelector('.opts').addEventListener('click', function (e) {
+      var b = e.target.closest('.opt'); if (!b) return;
+      picks[o.id] = +b.dataset.s; clearMarks(); render();
+    });
+  });
+
+  var qf = $('qf');
+  QF.forEach(function (q) {
+    var el = document.createElement('div');
+    el.className = 'card q'; el.dataset.id = q.id;
+    el.innerHTML = '<p>' + q.q + '</p><div class="opts">' + q.opts.map(function (t) { return '<button class="opt" data-v="' + t + '" aria-pressed="false">' + t + '</button>'; }).join('') + '</div>';
+    qf.appendChild(el);
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('.opt'); if (!b) return;
+      picks[q.id] = b.dataset.v; clearMarks(); render();
+    });
+  });
+
+  function render() {
+    Array.prototype.forEach.call(document.querySelectorAll('.obj, .q'), function (el) {
+      var v = picks[el.dataset.id];
+      Array.prototype.forEach.call(el.querySelectorAll('.opt'), function (b) {
+        var bv = b.dataset.s ? +b.dataset.s : b.dataset.v;
+        b.setAttribute('aria-pressed', bv === v ? 'true' : 'false');
+      });
+    });
+  }
+  function clearMarks() {
+    if (!checked) return;
+    checked = false;
+    Array.prototype.forEach.call(document.querySelectorAll('.obj, .q'), function (el) { el.classList.remove('right', 'wrong'); });
+    $('feedback').className = 'feedback';
+  }
+  function mark() {
+    var right = 0;
+    OBJS.forEach(function (o) {
+      var el = objs.querySelector('[data-id="' + o.id + '"]'), ok = picks[o.id] === owner(o);
+      if (ok) right++;
+      el.classList.toggle('right', ok); el.classList.toggle('wrong', !ok);
+      el.querySelector('.verdict').textContent = ok ? '✓ ' + size640(o).toFixed(0) + ' px at 640 → ' + BUCKET[owner(o)]
+        : (picks[o.id] ? '✗ Not this one. Scale √area by 640 / ' + Math.max(o.W, o.H) + '.' : '✗ No grid picked yet.');
+    });
+    QF.forEach(function (q) {
+      var el = qf.querySelector('[data-id="' + q.id + '"]'), ok = picks[q.id] === q.a;
+      if (ok) right++;
+      el.classList.toggle('right', ok); el.classList.toggle('wrong', !ok);
+    });
+    checked = true;
+    return right;
+  }
+  var TOTAL = OBJS.length + QF.length;
+  $('check').addEventListener('click', function () {
+    var right = mark(), fb = $('feedback');
+    if (right === TOTAL) {
+      fb.className = 'feedback show good';
+      fb.innerHTML = '<b>All ' + TOTAL + ' right.</b> You can read a feature pyramid. The debrief below shows the arithmetic.';
+      $('debrief').classList.add('show'); $('show').hidden = true;
+    } else {
+      var trap = picks.a === 16 || picks.d === 8;
+      fb.className = 'feedback show bad';
+      fb.innerHTML = '<b><span class="score">' + right + ' / ' + TOTAL + '</span> right.</b> Green is correct; fix the red ones and check again.' +
+        (trap ? ' <br>Hint: the letterbox <i>shrinks</i> a 1920-wide frame but <i>enlarges</i> a 416 px image.' : '');
+      $('show').hidden = false;
+    }
+  });
+  $('show').addEventListener('click', function () {
+    OBJS.forEach(function (o) { picks[o.id] = owner(o); });
+    QF.forEach(function (q) { picks[q.id] = q.a; });
+    render(); mark();
+    $('feedback').className = 'feedback show good';
+    $('feedback').innerHTML = '<b>Here are the answers.</b> The debrief below shows the arithmetic.';
+    $('show').hidden = true;
+    $('debrief').classList.add('show');
+    $('debrief').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('rows').innerHTML = OBJS.map(function (o) {
+    var k = 640 / Math.max(o.W, o.H);
+    return '<tr><td><b>' + o.name + '</b></td><td class="mono">' + Math.round(sqrtArea(o)) + ' px</td><td class="mono">' + o.W + ' × ' + o.H + '</td>' +
+      '<td class="mono">× ' + (k < 1 ? k.toFixed(2) : k.toFixed(2)) + (k > 1 ? ' (enlarged)' : k === 1 ? ' (as is)' : '') + '</td>' +
+      '<td class="mono"><b>' + size640(o).toFixed(0) + ' px</b> · ' + BUCKET[owner(o)] + '</td><td class="mono">stride ' + owner(o) + ' · ' + GRID[owner(o)] + '</td></tr>';
+  }).join('');
+  $('reset').addEventListener('click', function () {
+    picks = {}; checked = true; clearMarks(); render();
+    $('show').hidden = true; $('debrief').classList.remove('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+})();
+</script>
+</body>
+</html>
