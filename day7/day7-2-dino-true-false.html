@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DINO True or False · Day 7</title>
+<meta name="description" content="Day 7 Lab Part 1, exercise 2: three true-or-false statements about DINO.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('ai256p-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      var s = localStorage.getItem('ai256p-scale');
+      if (s) document.documentElement.style.setProperty('--scale', s);
+    } catch (e) {}
+  })();
+</script>
+<style>
+  :root {
+    --scale: 1;
+    --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    --radius: 14px;
+    --maxw: 1080px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1220; --bg-grid: rgba(148,163,196,0.06);
+    --surface: #151c2e; --surface-2: #1b2439; --line: #2a3550; --line-strong: #3a4766;
+    --text: #e8edf6; --muted: #9ba7bf; --faint: #6f7c96;
+    --accent: #f5a524; --accent-ink: #1a1203; --accent-soft: rgba(245,165,36,0.14);
+    --blue: #6ea8ff; --blue-soft: rgba(110,168,255,0.13);
+    --good: #3ecf8e; --good-soft: rgba(62,207,142,0.14);
+    --bad: #ff6b7d; --bad-soft: rgba(255,107,125,0.12);
+    --warn: #f5c451;
+    --train: #ff5f6d; --val: #5aa2ff;
+    --shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.25);
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --bg-grid: rgba(15,23,42,0.05);
+    --surface: #f6f7fa; --surface-2: #eef1f6; --line: #d5dbe6; --line-strong: #aeb8c9;
+    --text: #0b1220; --muted: #3f4a5e; --faint: #5f6b80;
+    --accent: #b45f00; --accent-ink: #ffffff; --accent-soft: rgba(180,95,0,0.10);
+    --blue: #1d4ed8; --blue-soft: rgba(29,78,216,0.09);
+    --good: #047857; --good-soft: rgba(4,120,87,0.10);
+    --bad: #be123c; --bad-soft: rgba(190,18,60,0.08);
+    --warn: #92400e;
+    --train: #d4283a; --val: #1f5fd6;
+    --shadow: 0 1px 2px rgba(15,23,42,0.06);
+  }
+  * { box-sizing: border-box; }
+  html { font-size: calc(17px * var(--scale)); -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background-color: var(--bg);
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: var(--text); font-family: var(--font); line-height: 1.6;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  a { color: var(--blue); }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+  .topbar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .topbar .wrap { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+  .crumb { font-family: var(--mono); font-size: .78rem; color: var(--muted); letter-spacing: .02em; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crumb b { color: var(--text); font-weight: 600; }
+  .tools { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn { font: 600 .82rem var(--font); color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; height: 36px; min-width: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+  .icon-btn:hover { border-color: var(--line-strong); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .theme-label { display: none; }
+  @media (min-width: 640px) { .theme-label { display: inline; } }
+
+  .exnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 22px 0 0; font-size: .84rem; }
+  .exnav .lbl { font-family: var(--mono); color: var(--faint); font-size: .74rem; letter-spacing: .04em; margin-right: 4px; }
+  .exnav a { text-decoration: none; color: var(--muted); border: 1px solid var(--line); background: var(--surface); padding: 3px 11px; border-radius: 999px; }
+  .exnav a:hover { border-color: var(--line-strong); color: var(--text); }
+  .exnav a[aria-current="page"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+  header.hero { padding: 26px 0 4px; }
+  .kicker { font-family: var(--mono); color: var(--accent); font-size: .85rem; letter-spacing: .04em; margin: 0 0 6px; }
+  h1 { font-size: clamp(1.8rem, 4.2vw, 2.7rem); line-height: 1.15; margin: 0 0 14px; letter-spacing: -0.015em; }
+  .lede { font-size: 1.08rem; color: var(--muted); max-width: 68ch; margin: 0; }
+  .lede strong { color: var(--text); }
+  section { margin: 34px 0; scroll-margin-top: 72px; }
+  h2 { font-size: 1.3rem; margin: 0 0 14px; letter-spacing: -0.005em; display: flex; align-items: baseline; gap: 10px; }
+  h2 .num { font-family: var(--mono); font-size: .85rem; color: var(--accent); font-weight: 500; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+
+  .collab { display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: var(--blue-soft); border: 1px dashed var(--blue); border-radius: var(--radius); margin-top: 18px; max-width: 68ch; }
+  .collab svg { flex-shrink: 0; width: 24px; height: 24px; color: var(--blue); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn { font: 600 .98rem var(--font); border-radius: 11px; padding: 11px 18px; cursor: pointer; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); }
+  .btn:hover:not(:disabled) { border-color: var(--text); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.06); border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn[hidden] { display: none; }
+  .feedback { margin-top: 14px; padding: 12px 16px; border-radius: 11px; border: 1px solid var(--line); background: var(--surface-2); display: none; }
+  .feedback.show { display: block; }
+  .feedback.good { background: var(--good-soft); border-color: var(--good); }
+  .feedback.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .feedback b { font-size: 1.05rem; }
+
+  .reveal { display: none; }
+  .reveal.show { display: block; animation: rise .35s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .takeaways { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+  .takeaways .card { padding: 16px 18px; }
+  .takeaways h4 { margin: 0 0 6px; font-size: 1rem; }
+  .takeaways p { margin: 0; color: var(--muted); font-size: .93rem; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 50px; padding: 20px 0 40px; color: var(--faint); font-size: .85rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+  footer .next { font-weight: 600; text-decoration: none; }
+  .linkbtn { background: none; border: none; color: var(--faint); font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: .9rem; opacity: 0; pointer-events: none; transition: all .2s; z-index: 20; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  .hint { color: var(--faint); font-size: .88rem; margin: 0 0 12px; }
+  .actions { margin-top: 18px; }
+  .score { font-family: var(--mono); font-weight: 600; }
+  .tfs { display: grid; gap: 12px; max-width: 760px; }
+  .tf { padding: 16px 18px; }
+  .tf .stmt { font-size: 1.1rem; font-weight: 600; margin: 0 0 12px; line-height: 1.45; }
+  .tf .stmt .n { font-family: var(--mono); color: var(--accent); margin-right: 8px; }
+  .tfbtns { display: flex; gap: 8px; }
+  .tfb { flex: 1; max-width: 160px; font: 600 1rem var(--font); padding: 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--text); cursor: pointer; }
+  .tfb:hover { border-color: var(--text); }
+  .tfb[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .tf.right { border-color: var(--good); background: linear-gradient(0deg, var(--good-soft), var(--good-soft)), var(--surface); }
+  .tf.wrong { border-color: var(--bad); background: linear-gradient(0deg, var(--bad-soft), var(--bad-soft)), var(--surface); }
+  .why { display: none; margin: 12px 0 0; color: var(--muted); font-size: .95rem; border-top: 1px dashed var(--line-strong); padding-top: 10px; }
+  .tf.right .why, .tf.wrong .why { display: block; }
+  .why b.v { color: var(--text); }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="crumb">KAUST Academy · Applied CV · <b>Day 7 Lab · Part 1</b> · Exercise 2</div>
+    <div class="tools">
+      <button class="icon-btn" id="smaller" title="Smaller text" aria-label="Smaller text">A−</button>
+      <button class="icon-btn" id="bigger" title="Bigger text" aria-label="Bigger text">A+</button>
+      <button class="icon-btn" id="theme" title="Switch theme" aria-label="Switch between dark and light mode">
+        <svg id="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>
+        <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
+        <span class="theme-label" id="theme-label">Light mode</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <nav class="exnav" aria-label="Day 7 Part 1 exercises"><span class="lbl">DAY 7 · PART 1 EXERCISES</span><a href="day7-1-lab-in-order.html">1 · Order</a><a href="day7-2-dino-true-false.html" aria-current="page">2 · DINO</a><a href="day7-3-match-the-words.html">3 · Words</a></nav>
+
+  <header class="hero">
+    <p class="kicker">EXERCISE 2 · DINO (§2)</p>
+    <h1>True or false?</h1>
+    <p class="lede">Three statements about DINO. <strong>Tap True or False for each one.</strong></p>
+    <div class="collab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.3A5 5 0 0 1 21 19"/></svg>
+      <div><b>Work with the person next to you.</b> Decide together, then check.</div>
+    </div>
+  </header>
+
+  <section>
+    <div class="tfs" id="tfs"></div>
+    <div class="actions">
+      <button class="btn primary" id="check">Check our answers</button>
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite"></div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Day 7 · Lab Part 1 · Open-world vision · lab by <b>Anas Aldadi</b></span>
+    <span><button class="linkbtn" id="reset">Reset this page</button> &nbsp;·&nbsp; <a class="next" href="day7-3-match-the-words.html">Next: Words →</a></span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, 1800); }
+  (function () {
+    var root = document.documentElement;
+    function syncTheme() {
+      var dark = root.getAttribute('data-theme') !== 'light';
+      $('ico-sun').style.display = dark ? '' : 'none';
+      $('ico-moon').style.display = dark ? 'none' : '';
+      $('theme-label').textContent = dark ? 'Light mode' : 'Dark mode';
+    }
+    $('theme').addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('ai256p-theme', next); } catch (e) {}
+      syncTheme();
+    });
+    function scale(d) {
+      var cur = parseFloat(getComputedStyle(root).getPropertyValue('--scale')) || 1;
+      var nx = Math.min(1.5, Math.max(0.85, Math.round((cur + d) * 100) / 100));
+      root.style.setProperty('--scale', nx);
+      try { localStorage.setItem('ai256p-scale', nx); } catch (e) {}
+    }
+    $('bigger').addEventListener('click', function () { scale(0.1); });
+    $('smaller').addEventListener('click', function () { scale(-0.1); });
+    syncTheme();
+  })();
+  var QS = [
+    { s: 'DINO needs labelled images to learn.', a: false,
+      why: 'DINO = <b>DI</b>stillation with <b>NO</b> labels. The answer is inside the image: the student learns to predict what the teacher says about another crop of the same picture.' },
+    { s: 'The teacher is trained with gradient descent, just like the student.', a: false,
+      why: 'Only the student gets gradients. The teacher is an <b>exponential moving average (EMA)</b> of the student: θ<sub>t</sub> ← 0.996·θ<sub>t</sub> + 0.004·θ<sub>s</sub>. It drifts slowly behind the student, which makes it a stable target.' },
+    { s: 'After training, the head is thrown away and we keep the backbone.', a: true,
+      why: 'The head (65,536 outputs) only exists to make training work. <b>The backbone is the product</b>: its [CLS] and patch features are what we use for search, few-shot and segmentation.' }
+  ];
+  var picks = {}, checked = false, box = $('tfs');
+  QS.forEach(function (q, i) {
+    var el = document.createElement('div');
+    el.className = 'card tf'; el.dataset.i = i;
+    el.innerHTML = '<p class="stmt"><span class="n">' + (i + 1) + '</span>' + q.s + '</p>' +
+      '<div class="tfbtns"><button class="tfb" data-v="1" aria-pressed="false">True</button><button class="tfb" data-v="0" aria-pressed="false">False</button></div>' +
+      '<p class="why"></p>';
+    box.appendChild(el);
+    el.querySelector('.tfbtns').addEventListener('click', function (e) {
+      var b = e.target.closest('.tfb'); if (!b) return;
+      picks[i] = b.dataset.v === '1'; clearMarks(); render();
+    });
+  });
+  function render() {
+    Array.prototype.forEach.call(box.children, function (el) {
+      var p = picks[el.dataset.i];
+      Array.prototype.forEach.call(el.querySelectorAll('.tfb'), function (b) { b.setAttribute('aria-pressed', p !== undefined && p === (b.dataset.v === '1') ? 'true' : 'false'); });
+    });
+  }
+  function clearMarks() {
+    if (!checked) return;
+    checked = false;
+    Array.prototype.forEach.call(box.children, function (el) { el.classList.remove('right', 'wrong'); });
+    $('feedback').className = 'feedback';
+  }
+  $('check').addEventListener('click', function () {
+    var right = 0;
+    QS.forEach(function (q, i) {
+      var el = box.children[i], ok = picks[i] === q.a;
+      if (ok) right++;
+      el.classList.toggle('right', ok); el.classList.toggle('wrong', !ok);
+      el.querySelector('.why').innerHTML = '<b class="v">' + (q.a ? 'True.' : 'False.') + '</b> ' + q.why;
+    });
+    checked = true;
+    var fb = $('feedback');
+    fb.className = 'feedback show ' + (right === QS.length ? 'good' : 'bad');
+    fb.innerHTML = right === QS.length ? '<b>3 / 3. You know your DINO.</b>' : '<b><span class="score">' + right + ' / 3</span> right.</b> Read the explanation under each one.';
+  });
+  $('reset').addEventListener('click', function () {
+    picks = {}; checked = true; clearMarks(); render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+})();
+</script>
+</body>
+</html>
